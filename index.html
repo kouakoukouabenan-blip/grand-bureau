@@ -718,7 +718,7 @@ function slidesHTML(src,forPrint){
 /* ================= GEMINI ================= */
 function apiErr(st,msg){
  if(st===400&&/api key|API_KEY/i.test(msg))return 'Clé API invalide. Vérifiez-la dans Réglages.';
- if(st===403)return 'Accès refusé par Google (clé ou projet non autorisé).';
+ if(st===403){if(/referer|referrer/i.test(msg))return "Clé refusée : elle est limitée à certains sites. Dans Google Cloud, autorisez ce site ou retirez la restriction « Sites web ».";if(/not been used|disabled|SERVICE_DISABLED|blocked/i.test(msg))return "Clé refusée : l'API Gemini (Generative Language API) n'est pas activée pour ce projet. Créez une clé sur aistudio.google.com/apikey.";return 'Accès refusé par Google (403) : '+short(msg,200)}
  if(st===404)return `Modèle « ${settings.model} » introuvable. Choisissez-en un autre dans Réglages.`;
  if(st===429)return 'Quota Gemini atteint. Patientez une minute ou changez de modèle.';
  return `Erreur API (${st}) ${short(msg,160)}`;
@@ -1203,7 +1203,7 @@ $('#sList').addEventListener('click',async()=>{
  msg.textContent='Vérification…';
  try{
   const r=await fetch(`${API}/models?pageSize=200`,{headers:{'x-goog-api-key':key}});
-  if(!r.ok){let t='';try{t=(await r.json()).error.message}catch(_){}msg.textContent='✖ '+(r.status===400||r.status===403?'Clé refusée par Google.':'Erreur '+r.status+' '+short(t,100));return}
+  if(!r.ok){let t='';try{t=(await r.json()).error.message}catch(_){}msg.textContent='✖ Erreur '+r.status+' : '+short(t||'clé refusée par Google',220);return}
   const d=await r.json();
   const ms=(d.models||[]).filter(x=>(x.supportedGenerationMethods||[]).includes('generateContent')&&/gemini/i.test(x.name)&&!/tts|image|embedding|live|audio|robotics|vision/i.test(x.name)).map(x=>x.name.replace('models/','')).sort().reverse();
   settings.models=ms;fillModels();
