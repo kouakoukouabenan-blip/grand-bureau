@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Le Grand Bureau — agents IA</title>
+<meta name="description" content="Un bureau virtuel d'agents IA : un directeur, une équipe, des livrables.">
+<meta name="theme-color" content="#14110e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314110e'/%3E%3Crect x='10' y='40' width='44' height='8' rx='3' fill='%23e3a43b'/%3E%3Ccircle cx='20' cy='28' r='7' fill='%232a9d8f'/%3E%3Ccircle cx='32' cy='24' r='8' fill='%23d9a441'/%3E%3Ccircle cx='44' cy='28' r='7' fill='%23c3479b'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style id="pageStyle"></style>
+<style>
+:root{--bg:#14110e;--panel:#1b1713;--panel2:#241f19;--panel3:#2d261f;--line:#352c23;--txt:#f2e9da;--mute:#a7987f;--accent:#e3a43b;--accent2:#c9772a;--ok:#5cbf7a;--danger:#e0584a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{overflow:hidden}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+#app{height:100dvh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:9px 12px;padding-top:calc(9px + env(safe-area-inset-top));border-bottom:1px solid var(--line);background:linear-gradient(#1c1814,#16130f);flex-shrink:0}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand svg{width:32px;height:32px;flex-shrink:0}
+.brand h1{font:700 17px/1.05 Fraunces,Georgia,serif;margin:0;white-space:nowrap}
+.brand small{display:block;color:var(--mute);font-size:10.5px;white-space:nowrap}
+.hbtns{margin-left:auto;display:flex;gap:6px;align-items:center}
+.ibtn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;height:34px;min-width:34px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:500}
+.ibtn:hover{background:var(--panel3)}
+.ibtn svg{width:17px;height:17px}
+.pill{font-size:10.5px;font-weight:600;padding:4px 8px;border-radius:99px;background:#33281a;color:var(--accent);border:1px solid #5a4526;white-space:nowrap;cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.pill.live{background:#173022;color:#7fe0a0;border-color:#2e5a3f}
+#installBtn{display:none}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 410px}
+@media(max-width:880px){#mbar .chips{display:none}#mbar{padding:7px 12px}main{grid-template-columns:1fr;grid-template-rows:minmax(230px,47%) minmax(0,1fr)}#panel{border-left:0!important;border-top:1px solid var(--line)}.brand small{display:none}.hide-m{display:none}}
+#wrap{position:relative;overflow:hidden;background:radial-gradient(120% 90% at 50% 35%,#2b231b,#100d0a)}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0;border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04)}
+#layer{position:absolute;inset:0}
+.fz{position:absolute}
+.agent{position:absolute;left:0;top:0;width:48px;height:70px;will-change:transform;cursor:pointer}
+.agent svg{display:block;overflow:visible}
+.agent .flip{transform-origin:24px 35px;transition:transform .15s}
+.agent.left .flip{transform:scaleX(-1)}
+.agent .leg,.agent .arm{transform-box:fill-box;transform-origin:50% 8%}
+.agent.walking .l1{animation:leg .3s ease-in-out infinite alternate}
+.agent.walking .l2{animation:leg .3s ease-in-out infinite alternate-reverse}
+.agent.walking .a1{animation:leg .3s ease-in-out infinite alternate-reverse}
+.agent.walking .a2{animation:leg .3s ease-in-out infinite alternate}
+.agent.walking .body{animation:bob .15s ease-in-out infinite alternate}
+@keyframes leg{from{transform:rotate(24deg)}to{transform:rotate(-24deg)}}
+@keyframes bob{to{transform:translateY(-1.6px)}}
+.agent.typing .a1{animation:type .17s ease-in-out infinite alternate}
+.agent.typing .a2{animation:type .17s ease-in-out infinite alternate-reverse}
+@keyframes type{from{transform:rotate(-40deg)}to{transform:rotate(-58deg) translateY(-1px)}}
+.agent .head{transform-box:fill-box;transform-origin:50% 90%}
+.agent.thinking .head{animation:tilt 1.8s ease-in-out infinite}
+@keyframes tilt{0%,100%{transform:rotate(0)}30%{transform:rotate(-7deg)}70%{transform:rotate(5deg)}}
+.agent .eyes{transform-box:fill-box;transform-origin:center;animation:blink 5s infinite}
+@keyframes blink{0%,93%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.agent .glow{opacity:0;transition:opacity .4s;mix-blend-mode:screen}
+.agent.typing .glow{opacity:.28}
+.desk .logo{transition:all .3s;opacity:.55}
+.desk.on .logo{opacity:1;animation:led 1.2s ease-in-out infinite}
+@keyframes led{50%{opacity:.55}}
+.desk.on .screenlight{opacity:.5}
+.screenlight{opacity:0;transition:opacity .4s}
+.printer .paper{transform:translateY(10px);transition:transform .3s}
+.printer.printing .paper{animation:print .9s linear infinite}
+@keyframes print{0%{transform:translateY(10px)}100%{transform:translateY(-12px)}}
+.printer.printing .pled{animation:led .4s infinite}
+.webscreen.on .globe{animation:spin 3s linear infinite;transform-box:fill-box;transform-origin:center}
+.webscreen.on .wglow{opacity:.9}
+.wglow{opacity:0;transition:opacity .4s}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ov{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.tag{position:absolute;left:0;top:0;font:600 10px/1 Inter,sans-serif;padding:3px 6px 3px 5px;border-radius:99px;background:rgba(18,14,10,.8);color:#fff;white-space:nowrap;display:flex;gap:4px;align-items:center;transform:translate(-50%,-100%);backdrop-filter:blur(2px)}
+.tag i{width:6px;height:6px;border-radius:50%;background:var(--c);display:block}
+.tag.work i{animation:led .7s infinite;box-shadow:0 0 6px var(--c)}
+.tag.done i{background:#5cbf7a}
+.bubble{position:absolute;left:0;top:0;max-width:190px;width:max-content;padding:7px 10px;border-radius:14px;background:#fffaf0;color:#2a2118;font-size:12px;line-height:1.3;box-shadow:0 6px 18px rgba(0,0,0,.38);opacity:0;transform:translate(-50%,-100%) scale(.8);transform-origin:50% 100%;transition:opacity .18s,transform .18s}
+.bubble.show{opacity:1;transform:translate(-50%,-100%) scale(1)}
+.bubble::after{content:"";position:absolute;bottom:-6px;left:calc(50% + var(--off,0px) - 6px);border:6px solid transparent;border-top-color:inherit;border-bottom:0}
+.bubble.say{background:#fffaf0;border-color:#fffaf0}
+.bubble.say::after{border-top-color:#fffaf0}
+.bubble.order{background:var(--accent);color:#2a1a05;font-weight:600}
+.bubble.order::after{border-top-color:var(--accent)}
+.bubble.think{background:#eef2ff;color:#2b3150;font-style:italic;border-radius:16px}
+.bubble.think::after{content:"";border:0;width:7px;height:7px;border-radius:50%;background:#eef2ff;bottom:-9px;left:calc(50% + var(--off,0px) - 3px)}
+.bubble.think::before{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:#eef2ff;bottom:-15px;left:calc(50% + var(--off,0px) + 1px)}
+.bubble.work{background:#fff;color:#555;font-style:italic}
+.bubble.work::after{border-top-color:#fff}
+.bubble .dots::after{content:"…";animation:dots 1s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.bubble b.who{font-style:normal;font-weight:700;margin-right:4px}
+@media(max-width:600px){.bubble{max-width:150px;font-size:11px;padding:6px 8px}.tag{font-size:9px}}
+.confetti{position:absolute;width:8px;height:12px;top:-10px;z-index:9;border-radius:2px;animation:fall linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+#zoomBtn{position:absolute;right:8px;bottom:8px;z-index:6}
+/* panel */
+#panel{display:flex;flex-direction:column;min-height:0;background:var(--panel);border-left:1px solid var(--line)}
+#mbar{display:none;padding:9px 12px;border-bottom:1px solid var(--line);background:linear-gradient(#251d14,#1d1813)}
+#mbar.on{display:block}
+#mbar .t{display:flex;align-items:center;gap:8px}
+#mbar .t b{font:600 13px/1.2 Fraunces,Georgia,serif;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mbar .st{font-size:11.5px;color:var(--mute);margin-top:3px}
+.prog{height:4px;border-radius:9px;background:#3a2f22;margin-top:7px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .6s}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 8px 3px 4px;border-radius:99px;background:var(--panel2);border:1px solid var(--line)}
+.chip .av{width:16px;height:16px;font-size:9px}
+.chip.work{border-color:var(--accent)}
+.chip.done{border-color:#2e5a3f;color:#9fe0b4}
+.stopb{background:#3a1c18;border:1px solid #6a2e26;color:#ffb4a8;border-radius:8px;padding:4px 9px;font-size:11.5px}
+.tabs{display:flex;border-bottom:1px solid var(--line);flex-shrink:0}
+.tabs button{flex:1;background:none;border:0;padding:10px 6px;color:var(--mute);font-weight:600;font-size:12.5px;border-bottom:2px solid transparent;position:relative}
+.tabs button.on{color:var(--txt);border-bottom-color:var(--accent)}
+.tabs .badge{position:absolute;top:6px;margin-left:3px;background:var(--accent);color:#2a1a05;font-size:9.5px;border-radius:9px;padding:0 5px;line-height:15px}
+.view{flex:1;min-height:0;overflow:auto;padding:12px;display:none;scroll-behavior:smooth}
+.view.on{display:block}
+.av{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;background:var(--c)}
+.msg{display:flex;gap:8px;margin:0 0 12px;align-items:flex-end}
+.msg .bx{max-width:85%;padding:9px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);white-space:pre-wrap;word-wrap:break-word}
+.msg.me{justify-content:flex-end}
+.msg.me .bx{background:#3a2c18;border-color:#5a4526;border-bottom-right-radius:4px}
+.msg.dir .bx{border-bottom-left-radius:4px}
+.msg .nm{font-size:10.5px;color:var(--mute);margin-bottom:3px;font-weight:600}
+.msg .att{font-size:11px;color:var(--accent);margin-top:4px}
+.note{font-size:12px;color:var(--mute);text-align:center;margin:6px 0 12px;padding:8px 10px;border-radius:10px;background:#1f1a15;border:1px dashed var(--line)}
+.note.err{color:#ffb4a8;border-color:#6a2e26;background:#2a1714}
+.note button{background:var(--accent);border:0;color:#2a1a05;border-radius:7px;padding:3px 9px;font-weight:600;font-size:11.5px;margin-left:4px}
+.card{margin:4px 0 12px 36px;border-radius:14px;padding:12px;background:linear-gradient(135deg,#2d2215,#211a13);border:1px solid #5a4526;display:flex;gap:11px;align-items:center;cursor:pointer}
+.card:hover{border-color:var(--accent)}
+.card .ic{width:40px;height:48px;border-radius:6px;background:#fffaf0;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7a4a12;font:700 10px Inter;text-transform:uppercase;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.card b{display:block;font:600 14px/1.25 Fraunces,Georgia,serif}
+.card small{color:var(--mute);font-size:11.5px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px 36px}
+.sugg button{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:5px 10px;font-size:11.5px;color:#e8d9bf;text-align:left}
+.sugg button:hover{border-color:var(--accent)}
+.typing{display:inline-flex;gap:3px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--mute);animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{50%{transform:translateY(-4px);opacity:.5}}
+.jl{display:flex;gap:8px;margin-bottom:9px;font-size:12.5px;align-items:flex-start}
+.jl .av{width:22px;height:22px;font-size:10px;margin-top:1px}
+.jl .tm{color:#6f6352;font-size:10px;margin-left:4px}
+.jl .who{font-weight:600}
+.jl .to{color:var(--mute)}
+.jl.thought .tx{font-style:italic;color:#c9c0e8}
+.jl.order .tx{color:#f3cf8a}
+.jl.done .tx{color:#9fe0b4}
+.jl.sys{justify-content:center;color:var(--mute);font-size:11px}
+.arch{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--panel2);cursor:pointer}
+.arch b{font:600 13.5px/1.25 Fraunces,Georgia,serif;display:block}
+.arch small{color:var(--mute);font-size:11px}
+.arch .x{margin-left:auto;background:none;border:0;color:var(--mute);font-size:18px;padding:4px 8px}
+.empty{color:var(--mute);text-align:center;padding:30px 10px;font-size:13px}
+#composer{border-top:1px solid var(--line);padding:9px 10px;padding-bottom:calc(9px + env(safe-area-inset-bottom));background:#17130f;flex-shrink:0}
+#files{display:flex;gap:6px;flex-wrap:wrap}
+#files:not(:empty){margin-bottom:7px}
+#files span{font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 4px 3px 8px;display:inline-flex;gap:4px;align-items:center}
+#files span button{background:none;border:0;color:var(--mute);padding:0 4px}
+.crow{display:flex;gap:7px;align-items:flex-end}
+#input{flex:1;resize:none;min-height:40px;max-height:140px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);padding:10px 12px;outline:none;line-height:1.35}
+#input:focus{border-color:#6a5230}
+#send{background:var(--accent);border:0;color:#2a1a05;width:42px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#send:disabled{opacity:.45}
+#attach{height:40px;width:40px}
+/* modals */
+.modal{position:fixed;inset:0;background:rgba(8,6,4,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));backdrop-filter:blur(3px)}
+.modal.on{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:18px;width:100%;max-width:560px;max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.mhead{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.mhead h2{font:700 18px/1.2 Fraunces,Georgia,serif;margin:0;flex:1;min-width:0}
+.mbody{padding:16px;overflow:auto;flex:1}
+.mfoot{padding:11px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding-bottom:calc(11px + env(safe-area-inset-bottom))}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:12px;font-weight:600;color:#d8c8ab;margin-bottom:5px}
+.fld .hint{font-size:11.5px;color:var(--mute);margin-top:4px}
+.fld .hint a{color:var(--accent)}
+.inp{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;outline:none}
+.inp:focus{border-color:#6a5230}
+textarea.inp{resize:vertical;min-height:62px}
+.row{display:flex;gap:8px;align-items:center}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #2a231c;font-size:13px}
+.sw small{display:block;color:var(--mute);font-size:11.5px}
+.sw input{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0}
+.btn{background:var(--panel3);border:1px solid var(--line);border-radius:10px;padding:8px 13px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#2a1a05}
+.btn.dng{background:#3a1c18;border-color:#6a2e26;color:#ffb4a8}
+.btn:disabled{opacity:.5}
+.tm-card{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:var(--panel2)}
+.tm-card .hd{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.tm-card .hd input[type=color]{width:34px;height:30px;border:0;background:none;padding:0}
+.tm-card .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.about{font-size:12px;color:var(--mute);margin-top:16px;line-height:1.6}
+/* viewer */
+#viewer .mbox{max-width:900px;height:100%;background:#2a241d}
+#viewer .mbody{background:#3a3128;padding:18px}
+.paper{background:#fffdf8;max-width:780px;margin:0 auto;padding:44px 48px;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+@media(max-width:600px){.paper{padding:26px 20px}#viewer .mbody{padding:10px}}
+.vtype{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700}
+.notes{font-size:12px;color:#d8c8ab;background:#2a231c;border-radius:8px;padding:8px 10px;margin:-8px 0 18px}
+#show{position:fixed;inset:0;background:#000;z-index:60;display:none;align-items:center;justify-content:center}
+#show.on{display:flex}
+#show .slide{width:min(100vw,177.7vh);margin:0;border-radius:0;box-shadow:none}
+#show .ctr{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#aaa;font-size:12px}
+#show .cls{position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;z-index:2}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#2d261f;border:1px solid #5a4526;color:var(--txt);padding:9px 14px;border-radius:12px;font-size:13px;opacity:0;transition:all .25s;z-index:80;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#printArea{display:none}
+@media print{
+ html,body{height:auto!important;overflow:visible!important;background:#fff!important}
+ body>*:not(#printArea){display:none!important}
+ #printArea{display:block!important}
+ #printArea .paper{box-shadow:none;padding:0;max-width:none}
+ #printArea .slide{width:297mm;height:210mm;aspect-ratio:auto;border-radius:0;box-shadow:none;margin:0;page-break-after:always;break-after:page;container-type:inline-size}
+ #printArea .notes{display:none}
+}
+</style>
+<style id="docCss">
+.doc{font:15px/1.65 Inter,system-ui,sans-serif;color:#1f1a14}
+.doc h1{font:700 30px/1.15 Fraunces,Georgia,serif;margin:0 0 .5em;color:#1b140d}
+.doc h2{font:700 21px/1.25 Fraunces,Georgia,serif;margin:1.5em 0 .5em;color:#7a4a12;border-bottom:2px solid #f0dfc0;padding-bottom:.2em}
+.doc h3{font-size:16.5px;margin:1.2em 0 .4em;color:#2b2115}
+.doc h4,.doc h5,.doc h6{font-size:15px;margin:1em 0 .3em}
+.doc p{margin:.6em 0}
+.doc table{border-collapse:collapse;width:100%;margin:1em 0;font-size:13.5px}
+.doc th{background:#f6ead3;text-align:left}
+.doc th,.doc td{border:1px solid #e2d3b8;padding:7px 9px;vertical-align:top}
+.doc tr:nth-child(even) td{background:#fcf8f1}
+.doc blockquote{margin:1em 0;padding:.6em 1em;border-left:4px solid #e3a43b;background:#fbf4e6;color:#4a3b28}
+.doc pre{background:#1e1b17;color:#f3ead8;padding:12px 14px;border-radius:8px;overflow:auto;font-size:12.5px;line-height:1.5}
+.doc code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88em;background:#f3ead8;padding:1px 4px;border-radius:4px}
+.doc pre code{background:none;padding:0;color:inherit}
+.doc a{color:#a35d12}
+.doc hr{border:0;border-top:1px solid #e2d3b8;margin:1.6em 0}
+.doc ul,.doc ol{padding-left:1.4em}
+.doc li{margin:.25em 0}
+.dochead{display:flex;justify-content:space-between;gap:10px;font:600 10.5px Inter,sans-serif;color:#8a7a62;border-bottom:1px solid #eadcc3;padding-bottom:8px;margin-bottom:24px;letter-spacing:.06em;text-transform:uppercase}
+.slide{container-type:inline-size;aspect-ratio:16/9;background:#fffaf2;color:#1f1a14;border-radius:10px;padding:5.5cqw 7cqw 5cqw 8cqw;position:relative;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.35);margin:0 auto 18px;max-width:860px;font-family:Inter,system-ui,sans-serif}
+.slide::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2.2cqw;background:linear-gradient(#e3a43b,#c9772a)}
+.slide h1{font:700 4.6cqw/1.12 Fraunces,Georgia,serif;margin:0 0 2.4cqw;color:#1b140d}
+.slide h2{font:700 3.2cqw/1.2 Fraunces,Georgia,serif;margin:1.6cqw 0 1cqw;color:#7a4a12}
+.slide h3{font-size:2.5cqw;margin:1.2cqw 0 .6cqw}
+.slide p,.slide li{font-size:2.15cqw;line-height:1.45;margin:.7cqw 0}
+.slide ul,.slide ol{padding-left:3cqw;margin:.6cqw 0}
+.slide table{border-collapse:collapse;width:100%;font-size:1.8cqw}
+.slide th,.slide td{border:1px solid #e2d3b8;padding:.7cqw 1cqw;text-align:left}
+.slide th{background:#f6ead3}
+.slide pre{font-size:1.6cqw;background:#1e1b17;color:#f3ead8;padding:1.4cqw;border-radius:1cqw;overflow:hidden}
+.slide blockquote{border-left:.5cqw solid #e3a43b;margin:1cqw 0;padding:.6cqw 1.6cqw;background:#fbf4e6}
+.slide .num{position:absolute;right:3cqw;bottom:2.4cqw;font-size:1.5cqw;color:#a08a68;font-weight:600}
+.slide.cover{background:radial-gradient(120% 120% at 80% 10%,#3a2a17,#14110e);color:#f6ecd9;display:flex;flex-direction:column;justify-content:center}
+.slide.cover h1{color:#f6ecd9;font-size:6cqw}
+.slide.cover h2,.slide.cover h3{color:#e3a43b;border:0}
+.slide.cover p,.slide.cover li{color:#e2d5bd}
+.slide.cover .num{color:#7a6a52}
+</style>
+</head>
+<body>
+<div id="app">
+ <header>
+  <div class="brand">
+   <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#2a2219"/><rect x="9" y="40" width="46" height="9" rx="3" fill="#e3a43b"/><circle cx="20" cy="28" r="7" fill="#2a9d8f"/><circle cx="32" cy="23" r="8.5" fill="#f2e9da"/><circle cx="44" cy="28" r="7" fill="#c3479b"/><path d="M27 19q5-6 10 0" stroke="#14110e" stroke-width="2.4" fill="none"/></svg>
+   <div><h1>Le Grand Bureau</h1><small>Votre équipe d'agents IA au travail</small></div>
+  </div>
+  <div class="hbtns">
+   <span class="pill" id="modePill" title="Réglages">DÉMO</span>
+   <button class="ibtn" id="installBtn" title="Installer l'application"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg><span class="hide-m">Installer</span></button>
+   <button class="ibtn" id="teamBtn" title="Équipe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c2.8 0 5 2.2 5 5"/></svg><span class="hide-m">Équipe</span></button>
+   <button class="ibtn" id="setBtn" title="Réglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+ </header>
+ <main>
+  <section id="wrap">
+   <div id="stage"><div id="back"></div><div id="layer"></div></div>
+   <div id="ov"></div>
+  </section>
+  <section id="panel">
+   <div id="mbar">
+    <div class="t"><b id="mTitle">Mission</b><button class="stopb" id="stopBtn">Arrêter</button></div>
+    <div class="st" id="mStage">Préparation…</div>
+    <div class="prog"><i id="mProg"></i></div>
+    <div class="chips" id="mChips"></div>
+   </div>
+   <div class="tabs">
+    <button class="on" data-v="chat">Directeur</button>
+    <button data-v="journal">Journal<span class="badge" id="jBadge" hidden>0</span></button>
+    <button data-v="archives">Livrables</button>
+   </div>
+   <div class="view on" id="v-chat"></div>
+   <div class="view" id="v-journal"><div class="empty" id="jEmpty">Le journal du bureau est vide. Les échanges entre agents apparaîtront ici.</div></div>
+   <div class="view" id="v-archives"></div>
+   <div id="composer">
+    <div id="files"></div>
+    <div class="crow">
+     <button class="ibtn" id="attach" title="Joindre un fichier (image, PDF, texte)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9"/></svg></button>
+     <input type="file" id="fileIn" multiple hidden accept="image/*,application/pdf,text/*,.md,.csv,.json">
+     <textarea id="input" rows="1" placeholder="Donnez une mission au directeur…"></textarea>
+     <button id="send" title="Envoyer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+    </div>
+   </div>
+  </section>
+ </main>
+</div>
+
+<!-- Réglages -->
+<div class="modal" id="setModal"><div class="mbox">
+ <div class="mhead"><h2>Réglages</h2><button class="ibtn" data-close>✕</button></div>
+ <div class="mbody">
+  <div class="fld"><label>Clé API Google Gemini</label>
+   <div class="row"><input class="inp" id="sKey" type="password" placeholder="AIza…" autocomplete="off"><button class="ibtn" id="sEye" title="Afficher">👁</button></div>
+   <div class="hint">Sans clé, le bureau fonctionne en <b>mode démo</b>. Clé gratuite sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Elle reste uniquement dans ce navigateur.</div>
+  </div>
+  <div class="fld"><label>Modèle</label>
+   <div class="row"><select class="inp" id="sModel"></select><button class="btn" id="sList">Lister</button></div>
+   <input class="inp" id="sCustom" placeholder="…ou nom de modèle personnalisé (ex. gemini-3.7-flash)" style="margin-top:7px">
+   <div class="hint" id="sTestMsg">« Lister » vérifie la clé et charge les modèles disponibles sur votre compte.</div>
+  </div>
+  <div class="sw"><div>Recherche Google<small>La chercheuse consulte le web en direct et cite ses sources.</small></div><input type="checkbox" id="sSearch"></div>
+  <div class="sw"><div>Relecture finale<small>La relectrice polit le livrable avant remise (1 appel en plus).</small></div><input type="checkbox" id="sReview"></div>
+  <div class="sw"><div>Vitesse du bureau<small>Rythme des déplacements et des bulles.</small></div><select class="inp" id="sSpeed" style="width:auto"><option value="0.7">Posée</option><option value="1">Normale</option><option value="1.6">Rapide</option></select></div>
+  <div class="row" style="margin-top:16px;flex-wrap:wrap"><button class="btn" id="sClearChat">Effacer la conversation</button><button class="btn dng" id="sClearArch">Vider les livrables</button></div>
+  <div class="about">Le Grand Bureau — v1.0<br>Conçu par Donatien Kouabenan · ATIKAN<br>Les agents utilisent l'API Gemini de Google avec votre propre clé.</div>
+ </div>
+ <div class="mfoot"><button class="btn" data-close>Annuler</button><button class="btn pri" id="sSave">Enregistrer</button></div>
+</div></div>
+
+<!-- Équipe -->
+<div class="modal" id="teamModal"><div class="mbox">
+ <div class="mhead"><h2>L'équipe</h2><button class="ibtn" data-close>✕</button></div>
+ <div class="mbody" id="teamBody"></div>
+ <div class="mfoot"><button class="btn" id="tReset">Équipe d'origine</button><button class="btn pri" id="tSave">Enregistrer</button></div>
+</div></div>
+
+<!-- Visionneuse -->
+<div class="modal" id="viewer"><div class="mbox">
+ <div class="mhead"><div style="flex:1;min-width:0"><div class="vtype" id="vType"></div><h2 id="vTitle"></h2></div><button class="ibtn" data-close>✕</button></div>
+ <div class="mbody" id="vBody"></div>
+ <div class="mfoot" id="vFoot"></div>
+</div></div>
+
+<div id="show"><button class="ibtn cls" id="showClose">✕</button><div id="showSlide"></div><div class="ctr" id="showCtr"></div></div>
+<div id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+(()=>{
+'use strict';
+const API='https://generativelanguage.googleapis.com/v1beta';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const store={get(k,d){try{const v=localStorage.getItem('gb_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('gb_'+k,JSON.stringify(v))}catch(e){}}};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const short=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trim()+'…':s};
+function shade(hex,p){let n=parseInt(hex.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;const f=p<0?0:255,t=Math.abs(p);r=Math.round((f-r)*t+r);g=Math.round((f-g)*t+g);b=Math.round((f-b)*t+b);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1)}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+/* ================= ÉQUIPE ================= */
+const DEFAULT_TEAM=[
+ {id:'dir',name:'Kouassi',fonction:'Directeur',perso:"Calme, stratège et chaleureux. Parle avec assurance et un brin d'humour ivoirien. Exige l'excellence et découpe chaque mission avec précision.",color:'#d9a441',skin:'#5a3a22',hair:'short',acc:'tie',skill:''},
+ {id:'awa',name:'Awa',fonction:'Chercheuse & veille',perso:"Curieuse insatiable et méthodique. Adore vérifier ses sources et s'enthousiasme quand elle trouve une pépite.",color:'#2a9d8f',skin:'#8a5a3a',hair:'bun',acc:'',skill:'search'},
+ {id:'yao',name:'Yao',fonction:'Rédacteur en chef',perso:"Plume élégante, un peu poète mais toujours clair. Aime les phrases qui sonnent juste et déteste le jargon inutile.",color:'#5b6ee1',skin:'#4e3020',hair:'short',acc:'glasses',skill:''},
+ {id:'fatou',name:'Fatou',fonction:'Analyste de données',perso:"Rigoureuse et directe. Pense en chiffres, tableaux et ordres de grandeur. Se méfie des affirmations sans preuve.",color:'#e76f51',skin:'#7a4a2c',hair:'braids',acc:'glasses',skill:''},
+ {id:'moussa',name:'Moussa',fonction:'Créatif & stratège',perso:"Bouillonnant d'idées. Trouve des angles originaux, des titres percutants et des structures claires. Pense toujours au public visé.",color:'#c3479b',skin:'#3f2618',hair:'short',acc:'cap',skill:''},
+ {id:'adjoua',name:'Adjoua',fonction:'Relectrice qualité',perso:"Exigeante et bienveillante. Traque les fautes, les incohérences et les phrases bancales. Rien ne lui échappe.",color:'#3fa34d',skin:'#6b4226',hair:'',acc:'headwrap',skill:'review'},
+ {id:'ibrahim',name:'Ibrahim',fonction:'Développeur & technicien',perso:"Pragmatique, aime les solutions simples qui marchent. Explique la technique sans jargon. Toujours un casque sur les oreilles.",color:'#1f9bd1',skin:'#5c3920',hair:'short',acc:'headphones',skill:''}
+];
+const LOOKS={hair:['short','bun','braids',''],acc:['','glasses','cap','headphones','headwrap','tie']};
+const IDLE={
+ dir:["Le bureau est prêt. Quelle est la mission du jour ?","Hmm, ce café est bien noir aujourd'hui.","J'attends un gros dossier, je le sens."],
+ awa:["Tiens, un article intéressant…","Je classe mes favoris.","Encore 47 onglets ouverts…"],
+ yao:["Cette phrase mérite une virgule de plus.","Le mot juste, toujours le mot juste.","Je relis Kourouma pour l'inspiration."],
+ fatou:["Ces chiffres ne mentent pas.","Un tableau bien fait, c'est de l'art.","Je vérifie mes formules."],
+ moussa:["J'ai une idée… non, deux idées !","Et si on faisait autrement ?","Il faut un titre qui claque."],
+ adjoua:["Une faute d'accord, là, je la vois.","Rien ne passe sans ma relecture.","Je range mes stylos rouges."],
+ ibrahim:["Le Wi-Fi est capricieux aujourd'hui.","J'optimise deux-trois trucs.","Ça compile ! Enfin."]
+};
+const IDLE_GEN=["Petite pause, je reviens.","Je range mon bureau.","On attend les ordres du chef."];
+const COFFEE=["Un petit café et je reprends.","Ce café-là est fort hein !","Attiéké-poisson à midi ?","Deux minutes de pause, pas plus."];
+const CHAT=["Tu as vu le match hier ?","On mange garba à midi ?","Il paraît que le chef prépare un gros dossier…","Tu me prêtes ton chargeur ?","Ton écran est plus grand que le mien !"];
+const REPLY=["Ah, laisse-moi, je travaille !","Garba, toujours !","On verra à la pause.","Hahaha, c'est vrai !","Tiens, prends-le."];
+const WORK={
+ search:["Je fouille le web","Je recoupe les sources","Celle-ci a l'air fiable","Je note les références","Encore une vérification"],
+ writer:["Je cherche le mot juste","Je structure le texte","Un paragraphe de plus","Je reformule ce passage","L'introduction doit accrocher"],
+ data:["Je fais les calculs","Ces chiffres sont cohérents ?","Je monte un tableau","Je compare les ordres de grandeur"],
+ creative:["Et si on prenait cet angle ?","Il faut un titre fort","Je dessine le plan","Une idée me vient"],
+ review:["Je traque les fautes","Cette phrase est bancale","Je vérifie la cohérence","Accord du participe… ok"],
+ dev:["J'écris le code","Je teste la logique","Je simplifie la solution","Je commente le code"],
+ gen:["Je réfléchis","Je travaille dessus","Encore un détail","Ça avance"]
+};
+function roleOf(a){if(a.skill==='search')return 'search';if(a.skill==='review')return 'review';const f=(a.fonction||'').toLowerCase();if(/r[ée]dac|plume|[ée]crivain/.test(f))return 'writer';if(/analy|donn|chiffr|financ|compt/.test(f))return 'data';if(/cr[ée]a|concep|design|strat|market/.test(f))return 'creative';if(/relect|qualit|correct/.test(f))return 'review';if(/d[ée]v|tech|code|ing[ée]n|informat/.test(f))return 'dev';if(/cherch|veille|document/.test(f))return 'search';return 'gen'}
+
+/* ================= ÉTAT ================= */
+let settings=Object.assign({key:'',model:'gemini-3.6-flash',models:[],review:true,search:true,speed:1},store.get('settings',{}));
+let team=store.get('team',null);
+if(!Array.isArray(team)||team.length!==DEFAULT_TEAM.length||team[0].id!=='dir')team=clone(DEFAULT_TEAM);
+let archives=store.get('archives',[]);
+let chatLog=store.get('chat',[]);
+let history=store.get('history',[]);
+let pendingFiles=[];
+let mission=null, planning=false, EPOCH=0;
+const A={}; // agents runtime
+const dirA=()=>A.dir;
+const workers=()=>team.slice(1).map(t=>A[t.id]);
+const tk=()=>1/Math.pow(settings.speed,.6);
+
+/* ================= LAYOUTS ================= */
+let L=null,S=1,OX=0,OY=0;
+function makeLayout(name){
+ const L={name,desks:[],brief:[]};
+ if(name==='land'){
+  Object.assign(L,{w:1000,h:620,hall:{axis:'y',v:275}});
+  L.rooms={library:{x:20,y:24,w:220,h:226},office:{x:770,y:24,w:210,h:231},coffee:{x:810,y:470,w:170,h:130}};
+  [330,500,670].forEach(x=>L.desks.push({x,seatY:120,approach:[{x:x+80,y:120}],visit:{x:x+80,y:128,approach:[]}}));
+  [330,500,670].forEach(x=>L.desks.push({x,seatY:400,approach:[],visit:{x:x+80,y:406,approach:[]}}));
+  L.dir={x:875,y:118,approach:[{x:955,y:118}]};
+  L.dirVisit={x:797,y:152,approach:[]};
+  [202,240].forEach(y=>[800,835,870,905,940].forEach(x=>L.brief.push({x,y,approach:[]})));
+  L.library={x:128,y:214};L.web={x:182,y:80};
+  L.coffee={x:888,y:568};L.printer={x:585,y:594,ex:585,ey:520};
+  L.runner={x:244,y:255,w:756,h:40};
+  L.plants=[[262,40],[262,602],[748,40],[748,302],[985,302],[20,602]];
+ }else{
+  Object.assign(L,{w:620,h:780,hall:{axis:'x',v:310}});
+  L.rooms={library:{x:16,y:24,w:274,h:196},office:{x:330,y:24,w:274,h:196},coffee:{x:200,y:684,w:220,h:92}};
+  [300,460,620].forEach(sy=>[160,460].forEach(x=>L.desks.push({x,seatY:sy,approach:[{x,y:sy-44}],visit:{x:x+76,y:sy+4,approach:[{x:x+76,y:sy-44}]}})));
+  L.dir={x:470,y:96,approach:[{x:578,y:96},{x:578,y:160}]};
+  L.dirVisit={x:362,y:128,approach:[]};
+  [162,198].forEach(y=>[372,412,452,492,532].forEach(x=>L.brief.push({x,y,approach:[]})));
+  L.library={x:205,y:170};L.web={x:226,y:70};
+  L.coffee={x:310,y:756};L.printer={x:565,y:756,ex:565,ey:690};
+  L.runner={x:290,y:222,w:40,h:558};
+  L.plants=[[30,250],[600,250],[30,760],[600,640],[30,640]];
+ }
+ return L;
+}
+function inRoom(p){for(const k in L.rooms){const r=L.rooms[k];if(p.x>=r.x-2&&p.x<=r.x+r.w+2&&p.y>=r.y-2&&p.y<=r.y+r.h+20)return k}return null}
+function spot(a,key){
+ const [k,arg]=key.split(':');
+ const idx=team.findIndex(t=>t.id===a.id)-1;
+ if(k==='desk'){if(a.id==='dir')return L.dir;const d=L.desks[idx%L.desks.length];return {x:d.x,y:d.seatY,approach:d.approach}}
+ if(k==='brief')return L.brief[(+arg||0)%L.brief.length];
+ if(k==='library'){const i=+arg||0;return {x:L.library.x+((i%3)-1)*30,y:L.library.y+(i>2?18:0),approach:[]}}
+ if(k==='coffee'){const i=+arg||0;return {x:L.coffee.x+((i%4)-1.5)*26,y:L.coffee.y,approach:[]}}
+ if(k==='printer')return {x:L.printer.x,y:L.printer.y,approach:[]};
+ if(k==='visit'){if(arg==='dir')return L.dirVisit;const o=team.findIndex(t=>t.id===arg)-1;return L.desks[o%L.desks.length].visit}
+ return L.dir;
+}
+function route(a,dest){
+ const H=L.hall,proj=p=>H.axis==='y'?{x:p.x,y:H.v}:{x:H.v,y:p.y};
+ const fc=a.path.length?[]:(a.app||[]),tc=dest.approach||[];
+ const s=fc.length?fc[fc.length-1]:a.pos,e=tc.length?tc[tc.length-1]:dest;
+ const pts=[...fc];
+ if(Math.hypot(s.x-e.x,s.y-e.y)>2){const rs=inRoom(s),re=inRoom(e);if(!(rs&&rs===re))pts.push(proj(s),proj(e))}
+ for(let i=tc.length-1;i>=0;i--)pts.push(tc[i]);
+ pts.push({x:dest.x,y:dest.y});
+ const out=[];let prev=a.pos;for(const p of pts){if(Math.hypot(p.x-prev.x,p.y-prev.y)>1.5){out.push({x:p.x,y:p.y});prev=p}}
+ return out;
+}
+
+/* ================= DESSIN ================= */
+function drawBack(){
+ let seed=11;const rand=()=>(seed=(seed*9301+49297)%233280)/233280;
+ const R=L.rooms;let g='';
+ g+=`<rect width="${L.w}" height="${L.h}" fill="url(#parq)"/>`;
+ const ru=L.runner;g+=`<rect x="${ru.x}" y="${ru.y}" width="${ru.w}" height="${ru.h}" rx="6" fill="#7a2f22" opacity=".8"/><rect x="${ru.x+5}" y="${ru.y+5}" width="${ru.w-10}" height="${ru.h-10}" rx="4" fill="none" stroke="#e3b35e" stroke-width="2" stroke-dasharray="9 6" opacity=".6"/>`;
+ // bibliothèque
+ const lb=R.library;
+ g+=`<rect x="${lb.x}" y="${lb.y}" width="${lb.w}" height="${lb.h}" rx="8" fill="url(#carpet)"/>`;
+ const sx=lb.x+8,sw=lb.w-16;g+=`<rect x="${sx}" y="${lb.y+4}" width="${sw}" height="42" rx="3" fill="#4a2e1b"/><rect x="${sx}" y="${lb.y+42}" width="${sw}" height="5" fill="#2e1c10"/>`;
+ const bc=['#b5452f','#2f6f8f','#d6a03a','#3e7d4f','#7b4fa0','#e2d3b8','#8c2f2f','#1f4e5f'];
+ for(let bx=sx+4;bx<sx+sw-10;){const bw=5+(rand()*6|0),bh=24+(rand()*12|0);g+=`<rect x="${bx}" y="${lb.y+42-bh}" width="${bw}" height="${bh}" rx="1" fill="${bc[rand()*bc.length|0]}"/>`;bx+=bw+1+(rand()<.1?6:0)}
+ const ws=L.web;g+=`<g class="webscreen" id="webscreen"><rect x="${ws.x-34}" y="${ws.y}" width="68" height="46" rx="5" fill="#0c2430" stroke="#1d5f6b" stroke-width="2"/><rect class="wglow" x="${ws.x-34}" y="${ws.y}" width="68" height="46" rx="5" fill="none" stroke="#5eead4" stroke-width="2.5" filter="url(#blur)"/><g class="globe"><circle cx="${ws.x}" cy="${ws.y+23}" r="14" fill="none" stroke="#5eead4" stroke-width="1.6"/><ellipse cx="${ws.x}" cy="${ws.y+23}" rx="6" ry="14" fill="none" stroke="#5eead4" stroke-width="1.2"/><path d="M${ws.x-14} ${ws.y+23}h28M${ws.x-12} ${ws.y+16}h24M${ws.x-12} ${ws.y+30}h24" stroke="#5eead4" stroke-width="1"/></g><rect x="${ws.x-4}" y="${ws.y+46}" width="8" height="10" fill="#333"/><text x="${ws.x}" y="${ws.y+66}" text-anchor="middle" font-size="9" font-weight="700" fill="#a9e9de" font-family="Inter,sans-serif" letter-spacing="2">WEB</text></g>`;
+ g+=`<circle cx="${lb.x+50}" cy="${lb.y+122}" r="24" fill="#6b4428"/><circle cx="${lb.x+50}" cy="${lb.y+122}" r="20" fill="#7d5232"/><rect x="${lb.x+40}" y="${lb.y+112}" width="18" height="13" fill="#fff" transform="rotate(12 ${lb.x+49} ${lb.y+118})"/>`;
+ g+=`<text x="${lb.x+lb.w-10}" y="${lb.y+lb.h-10}" text-anchor="end" font-size="12" font-family="Fraunces,Georgia,serif" font-weight="700" fill="#cfe3d6" opacity=".55" letter-spacing="2">BIBLIOTHÈQUE</text>`;
+ // direction
+ const of=R.office;
+ g+=`<rect x="${of.x}" y="${of.y}" width="${of.w}" height="${of.h}" rx="8" fill="#3b2a1d"/><rect x="${of.x+14}" y="${of.y+50}" width="${of.w-28}" height="${of.h-64}" rx="6" fill="url(#bogo)" opacity=".92"/>`;
+ g+=`<rect x="${of.x+of.w-62}" y="${of.y+4}" width="54" height="30" rx="3" fill="#4a2e1b"/>`;
+ for(let i=0;i<6;i++)g+=`<rect x="${of.x+of.w-58+i*8}" y="${of.y+10}" width="6" height="20" fill="${bc[(i*3)%bc.length]}"/>`;
+ g+=`<rect x="${of.x+10}" y="${of.y+6}" width="70" height="30" rx="3" fill="#f4efe6"/><path d="M${of.x+16} ${of.y+28}l12-9 10 6 14-12 14 8" stroke="#c9772a" stroke-width="2" fill="none"/>`;
+ g+=`<path d="M${of.x} ${of.y+of.h}V${of.y}" stroke="#a9d8ea" stroke-width="4" opacity=".45"/>`;
+ g+=`<path d="M${of.x} ${of.y+of.h}h${of.w*0.35}M${of.x+of.w*0.75} ${of.y+of.h}h${of.w*0.25}" stroke="#a9d8ea" stroke-width="4" opacity=".45"/>`;
+ g+=`<text x="${of.x+12}" y="${of.y+of.h-10}" font-size="12" font-family="Fraunces,Georgia,serif" font-weight="700" fill="#f3d9a8" opacity=".6" letter-spacing="2">DIRECTION</text>`;
+ // café
+ const cf=R.coffee;
+ g+=`<rect x="${cf.x}" y="${cf.y}" width="${cf.w}" height="${cf.h}" rx="8" fill="url(#tiles)"/><rect x="${cf.x+8}" y="${cf.y+4}" width="${cf.w-16}" height="24" rx="4" fill="#5b3a24"/><rect x="${cf.x+8}" y="${cf.y+4}" width="${cf.w-16}" height="5" rx="2" fill="#7a5034"/>`;
+ g+=`<rect x="${cf.x+18}" y="${cf.y-8}" width="26" height="30" rx="4" fill="#26231f"/><rect x="${cf.x+23}" y="${cf.y-3}" width="16" height="8" rx="2" fill="#4b463f"/><circle cx="${cf.x+38}" cy="${cf.y+15}" r="2" fill="#e0584a"/>`;
+ g+=`<rect x="${cf.x+54}" y="${cf.y+8}" width="7" height="8" rx="1.5" fill="#fff"/><rect x="${cf.x+64}" y="${cf.y+8}" width="7" height="8" rx="1.5" fill="#fff"/><circle cx="${cf.x+cf.w-30}" cy="${cf.y+14}" r="7" fill="#d6a03a"/>`;
+ g+=`<text x="${cf.x+cf.w-10}" y="${cf.y+cf.h-8}" text-anchor="end" font-size="12" font-family="Fraunces,Georgia,serif" font-weight="700" fill="#6b4a2b" opacity=".7" letter-spacing="2">CAFÉ</text>`;
+ // chaises
+ const chair=(x,y,col,big)=>{const w=big?40:32;return `<rect x="${x-w/2}" y="${y-60}" width="${w}" height="42" rx="11" fill="${col}"/><rect x="${x-w/2+4}" y="${y-56}" width="${w-8}" height="32" rx="9" fill="${shade(col,.14)}"/>`};
+ L.desks.slice(0,team.length-1).forEach(d=>g+=chair(d.x,d.seatY,'#34303c'));
+ g+=chair(L.dir.x,L.dir.y,'#6a2e1c',true);
+ // plantes
+ L.plants.forEach(([x,y])=>{g+=`<circle cx="${x}" cy="${y}" r="11" fill="#7a4a2a"/><circle cx="${x-6}" cy="${y-6}" r="9" fill="#2f7a3f"/><circle cx="${x+6}" cy="${y-7}" r="8" fill="#3f9a4f"/><circle cx="${x}" cy="${y-13}" r="8" fill="#4caf5a"/>`});
+ // mur haut
+ g+=`<rect width="${L.w}" height="16" fill="#2b221b"/>`;
+ for(let x=60;x<L.w-60;x+=130)g+=`<rect x="${x}" y="3" width="80" height="9" rx="2" fill="#8fc3e8" opacity=".55"/>`;
+ g+=`<rect width="${L.w}" height="${L.h}" fill="url(#vign)"/>`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.w} ${L.h}" width="${L.w}" height="${L.h}" style="position:absolute;inset:0;display:block"><defs>
+ <pattern id="parq" width="84" height="40" patternUnits="userSpaceOnUse"><rect width="84" height="40" fill="#c8985f"/><rect y="20" width="84" height="20" fill="#c29158"/><rect width="84" height="1.2" fill="#9c6e3e" opacity=".6"/><rect y="20" width="84" height="1.2" fill="#9c6e3e" opacity=".6"/><rect x="0" width="1.2" height="20" fill="#9c6e3e" opacity=".55"/><rect x="42" y="20" width="1.2" height="20" fill="#9c6e3e" opacity=".55"/></pattern>
+ <pattern id="bogo" width="28" height="28" patternUnits="userSpaceOnUse"><rect width="28" height="28" fill="#b8742c"/><path d="M4 4h6v6H4zM18 18h6v6h-6z" fill="#3b2412"/><circle cx="21" cy="7" r="2" fill="#f1dfc0"/><circle cx="7" cy="21" r="2" fill="#f1dfc0"/><path d="M0 14h28" stroke="#3b2412" stroke-width="1.5" stroke-dasharray="3 3"/></pattern>
+ <pattern id="carpet" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#2f4a3c"/><circle cx="8" cy="8" r="1.2" fill="#3e6150"/></pattern>
+ <pattern id="tiles" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#ece4d6"/><rect width="10" height="10" fill="#ddd2bf"/><rect x="10" y="10" width="10" height="10" fill="#ddd2bf"/></pattern>
+ <radialGradient id="vign" cx="50%" cy="45%" r="75%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".32"/></radialGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="3"/></filter>
+ </defs>${g}</svg>`;
+}
+function makeDesk(x,seatY,color,label,big){
+ const w=big?150:120,el=document.createElement('div');el.className='fz desk';
+ el.style.cssText=`left:${x-w/2}px;top:${seatY-14}px;width:${w}px;height:50px;z-index:${seatY+34}`;
+ const wood=big?'#5e3520':'#8a5a35',front=big?'#4a2918':'#6e4528',c=w/2;
+ el.innerHTML=`<svg viewBox="0 -30 ${w} 80" width="${w}" height="80" style="position:absolute;top:-30px;left:0;overflow:visible">
+ <ellipse class="screenlight" cx="${c}" cy="-24" rx="40" ry="16" fill="${color}" filter="url(#blur)"/>
+ <path d="M${c-24} 3L${c-21} -22H${c+21}L${c+24} 3Z" fill="#2c303b"/><circle class="logo" cx="${c}" cy="-10" r="4" fill="${color}"/>
+ <rect x="0" y="2" width="${w}" height="16" rx="4" fill="${wood}"/><rect x="0" y="2" width="${w}" height="3" rx="2" fill="${shade(wood,.2)}"/>
+ <rect x="5" y="18" width="${w-10}" height="30" rx="3" fill="${front}"/>
+ <rect x="${c-30}" y="25" width="60" height="14" rx="2" fill="${shade(front,-.35)}"/><text x="${c}" y="35" text-anchor="middle" font-size="8.5" font-family="Inter,sans-serif" font-weight="700" fill="#f1d9a8" letter-spacing=".5">${escH(label.toUpperCase())}</text>
+ <rect x="${w-26}" y="-6" width="9" height="10" rx="2" fill="#f5efe4"/><rect x="${w-17}" y="-3" width="3" height="4" rx="1" fill="#f5efe4"/>
+ <rect x="10" y="-4" width="22" height="10" fill="#fff" transform="rotate(-7 21 1)"/><rect x="13" y="-5" width="22" height="10" fill="#f3efe7" transform="rotate(4 24 0)"/>
+ ${big?`<path d="M${w-40} -4v-16l8-6" stroke="#222" stroke-width="2" fill="none"/><path d="M${w-38} -30l10 0 -4 8h-8z" fill="#e3a43b"/>`:''}
+ </svg>`;
+ return el;
+}
+function spriteSVG(a){
+ const c=a.color,d=shade(c,-.28),sk=a.skin||'#5a3a22',hc='#16100c';
+ const cap=`<path d="M13 19Q12 8 24 8Q36 8 35 19Q31 13 24 13Q17 13 13 19Z" fill="${hc}"/>`;
+ let hair='';
+ if(a.acc!=='headwrap'){if(a.hair==='short')hair=cap;else if(a.hair==='bun')hair=cap+`<circle cx="24" cy="6" r="5" fill="${hc}"/>`;else if(a.hair==='braids')hair=cap+`<rect x="11" y="15" width="4" height="20" rx="2" fill="${hc}"/><rect x="33" y="15" width="4" height="20" rx="2" fill="${hc}"/>`}
+ let acc='';
+ if(a.acc==='glasses')acc=`<g fill="rgba(255,255,255,.12)" stroke="#111" stroke-width="1.2"><circle cx="20" cy="21" r="3.2"/><circle cx="28" cy="21" r="3.2"/></g><path d="M23.2 21h1.6" stroke="#111" stroke-width="1.2"/>`;
+ if(a.acc==='headwrap')acc=`<path d="M11.5 19Q10 3 24 4Q38 3 36.5 19Q31 11 24 11Q17 11 11.5 19Z" fill="${c}"/><path d="M14 12Q24 6 34 12" stroke="${shade(c,.4)}" stroke-width="2" fill="none"/><circle cx="34" cy="7" r="4.5" fill="${shade(c,-.15)}"/>`;
+ if(a.acc==='cap')acc=`<path d="M13 17Q13 7 24 7Q35 7 35 17Z" fill="${c}"/><path d="M24 15h15q2.5 0 1 2.4H24z" fill="${d}"/>`;
+ if(a.acc==='headphones')acc=`<path d="M12 21Q12 6 24 6Q36 6 36 21" stroke="#222" stroke-width="2.4" fill="none"/><rect x="9" y="17" width="5" height="9" rx="2" fill="${c}"/><rect x="34" y="17" width="5" height="9" rx="2" fill="${c}"/>`;
+ const tie=a.acc==='tie'?`<path d="M19 31l5 3.2 5-3.2" fill="#fff"/><path d="M24 34l-2.4 3 2.4 11 2.4-11z" fill="#8c1c1c"/>`:'';
+ return `<svg viewBox="0 0 48 70" width="48" height="70"><g class="flip">
+ <ellipse cx="24" cy="67" rx="13" ry="3.5" fill="rgba(0,0,0,.28)"/>
+ <rect class="leg l1" x="16.5" y="50" width="6" height="16" rx="3" fill="#2a2630"/><rect class="leg l2" x="25.5" y="50" width="6" height="16" rx="3" fill="#2a2630"/>
+ <g class="body">
+ <rect class="arm a1" x="8" y="34" width="6" height="16" rx="3" fill="${d}"/><rect class="arm a2" x="34" y="34" width="6" height="16" rx="3" fill="${d}"/>
+ <rect x="12" y="31" width="24" height="23" rx="9" fill="${c}"/>${tie}
+ <g class="head"><circle cx="24" cy="20" r="11" fill="${sk}"/>${hair}
+ <g class="eyes"><circle cx="20" cy="21" r="1.5" fill="#120c08"/><circle cx="28" cy="21" r="1.5" fill="#120c08"/></g>
+ <path d="M21 25.8q3 2.2 6 0" stroke="#120c08" stroke-width="1.2" fill="none" stroke-linecap="round"/>${acc}
+ <ellipse class="glow" cx="24" cy="20" rx="12" ry="10" fill="${c}"/></g>
+ </g></g></svg>`;
+}
+
+/* ================= MONDE ================= */
+const wrap=$('#wrap'),stage=$('#stage'),back=$('#back'),layer=$('#layer'),ov=$('#ov');
+let printerEl=null;
+function buildWorld(){
+ back.innerHTML=drawBack();layer.innerHTML='';
+ stage.style.width=L.w+'px';stage.style.height=L.h+'px';
+ team.forEach((t,i)=>{
+  let a=A[t.id];
+  if(!a){a=A[t.id]={id:t.id,pos:{x:0,y:0},path:[],app:[],spotKey:'desk',face:1,busy:false};
+   a.tag=document.createElement('div');a.tag.className='tag';ov.appendChild(a.tag);
+   a.bub=document.createElement('div');a.bub.className='bubble';a.bub.innerHTML='<span class="bt"></span>';ov.appendChild(a.bub);
+   a.el=document.createElement('div');a.el.className='agent';
+   a.el.addEventListener('click',()=>pokeAgent(a));
+  }
+  Object.assign(a,t);
+  a.el.innerHTML=spriteSVG(a);a.el.querySelector('.eyes').style.animationDelay=(-Math.random()*5)+'s';
+  a.tag.style.setProperty('--c',a.color);a.tag.innerHTML=`<i></i>${a.id==='dir'?'★ ':''}${escH(a.name)}`;
+  layer.appendChild(a.el);
+  a.desk=i===0?makeDesk(L.dir.x,L.dir.y,a.color,'Direction',true):makeDesk(L.desks[(i-1)%L.desks.length].x,L.desks[(i-1)%L.desks.length].seatY,a.color,a.name,false);
+  layer.appendChild(a.desk);
+ });
+ const p=L.printer;printerEl=document.createElement('div');printerEl.className='fz printer';
+ printerEl.style.cssText=`left:${p.ex-26}px;top:${p.ey}px;z-index:${p.ey+40};width:52px;height:44px`;
+ printerEl.innerHTML=`<svg viewBox="0 0 52 44" width="52" height="44" style="overflow:visible"><rect x="6" y="6" width="40" height="12" rx="3" fill="#bdb7ad"/><rect class="paper" x="14" y="2" width="24" height="16" fill="#fff"/><rect x="2" y="14" width="48" height="24" rx="6" fill="#d8d4cc"/><rect x="9" y="21" width="34" height="4" rx="2" fill="#2a2a2a"/><circle class="pled" cx="42" cy="31" r="2.2" fill="#5cbf7a"/><ellipse cx="26" cy="41" rx="22" ry="3" fill="rgba(0,0,0,.2)"/></svg>`;
+ layer.appendChild(printerEl);
+ for(const id in A){const a=A[id];const sp=spot(a,a.spotKey);a.pos={x:sp.x,y:sp.y};a.app=sp.approach||[];a.path=[];if(a.resolve){const r=a.resolve;a.resolve=null;r()}a.el.classList.remove('walking')}
+}
+function fit(){
+ const r=wrap.getBoundingClientRect();if(!r.width||!r.height)return;
+ const cand=['land','port'].map(n=>{const l=n==='land'?{w:1000,h:620}:{w:620,h:780};return {n,s:Math.min(r.width/l.w,r.height/l.h)}});
+ let best=cand[0].s>=cand[1].s*0.85?cand[0]:cand[1];
+ if(L){const cur=cand.find(c=>c.n===L.name);if(cur.s>best.s*0.9)best=cur}
+ if(!L||L.name!==best.n){L=makeLayout(best.n);buildWorld()}
+ S=best.s*0.97;OX=(r.width-L.w*S)/2;OY=(r.height-L.h*S)/2;
+ stage.style.transform=`translate(${OX}px,${OY}px) scale(${S})`;
+}
+new ResizeObserver(fit).observe(wrap);
+
+const SPEED=190;let last=performance.now();
+function tick(now){
+ const dt=Math.min(.05,(now-last)/1000);last=now;
+ const W=wrap.clientWidth;
+ for(const id in A){
+  const a=A[id];
+  if(a.path.length){
+   const t=a.path[0],dx=t.x-a.pos.x,dy=t.y-a.pos.y,d=Math.hypot(dx,dy),step=SPEED*settings.speed*dt;
+   if(Math.abs(dx)>1)a.face=dx<0?-1:1;
+   if(d<=step){a.pos={x:t.x,y:t.y};a.path.shift();if(!a.path.length){a.el.classList.remove('walking');const r=a.resolve;a.resolve=null;r&&r()}}
+   else{a.pos.x+=dx/d*step;a.pos.y+=dy/d*step;a.el.classList.add('walking')}
+  }
+  a.el.style.transform=`translate(${a.pos.x-24}px,${a.pos.y-66}px)`;a.el.style.zIndex=Math.round(a.pos.y);
+  a.el.classList.toggle('left',a.face<0);
+  const sx=OX+a.pos.x*S,sy=OY+(a.pos.y-62)*S;
+  a.tag.style.left=sx+'px';a.tag.style.top=sy+'px';
+  if(a.bub.classList.contains('show')){
+   const bw=a.bubW||120,bh=a.bubH||30,lx=clamp(sx,bw/2+4,W-bw/2-4),ty=Math.max(sy-17,bh+4);
+   a.bub.style.left=lx+'px';a.bub.style.top=ty+'px';a.bub.style.setProperty('--off',clamp(sx-lx,-bw/2+14,bw/2-14)+'px');
+  }
+ }
+ requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+function moveTo(a,key){
+ return new Promise(res=>{
+  if(a.resolve){const r=a.resolve;a.resolve=null;r()}
+  const dest=spot(a,key),pts=route(a,dest);
+  a.spotKey=key;a.app=dest.approach||[];a.path=pts;
+  if(!pts.length){a.el.classList.remove('walking');res();return}
+  a.resolve=res;
+ });
+}
+function say(a,text,type='say',ms=3200,who){
+ clearTimeout(a.bubT);
+ a.bub.className='bubble '+type;
+ a.bub.innerHTML=(who?`<b class="who">${escH(who)}</b>`:'')+`<span class="bt">${escH(text)}</span>`+(type==='work'?'<span class="dots"></span>':'');
+ a.bubW=a.bub.offsetWidth;a.bubH=a.bub.offsetHeight;
+ requestAnimationFrame(()=>a.bub.classList.add('show'));
+ if(ms>0)a.bubT=setTimeout(()=>a.bub.classList.remove('show'),ms*tk());
+}
+function hush(a){clearTimeout(a.bubT);a.bub.classList.remove('show')}
+function setWork(a,on,mode='typing'){a.el.classList.toggle('typing',on&&mode==='typing');a.el.classList.toggle('thinking',on&&mode==='thinking');a.desk.classList.toggle('on',on);a.tag.classList.toggle('work',on)}
+function pokeAgent(a){
+ if(a.bub.classList.contains('show'))return;
+ const t=team.find(x=>x.id===a.id);
+ if(mission&&a.tag.classList.contains('work'))return say(a,pick(WORK[roleOf(t)]||WORK.gen),'think',2200);
+ say(a,`${t.name}, ${t.fonction.toLowerCase()}. ${pick(IDLE[a.id]||IDLE_GEN)}`,'say',3000);
+}
+
+/* ================= VIE DE BUREAU (repos) ================= */
+setInterval(()=>{
+ if(mission||planning||document.hidden)return;
+ const ep=EPOCH;
+ const free=workers().filter(a=>!a.busy&&!a.path.length&&a.spotKey==='desk');
+ if(!free.length)return;
+ const a=pick(free);a.busy=true;const r=Math.random();
+ (async()=>{try{
+  if(r<.32){await moveTo(a,'coffee:'+(Math.random()*4|0));if(ep!==EPOCH)return;say(a,pick(COFFEE),'say',2800);await sleep(3600*tk());}
+  else if(r<.62){const o=pick(workers().filter(x=>x!==a&&!x.busy&&x.spotKey==='desk'));if(!o)return;o.busy=true;try{await moveTo(a,'visit:'+o.id);if(ep!==EPOCH)return;say(a,pick(CHAT),'say',2600);await sleep(2000*tk());if(ep!==EPOCH)return;say(o,pick(REPLY),'say',2400);await sleep(2600*tk());}finally{o.busy=false}}
+  else if(r<.9){say(a,pick(IDLE[a.id]||IDLE_GEN),'think',2800);await sleep(3000);}
+  else{const d=dirA();if(!d.busy)say(d,pick(IDLE.dir),'say',3200);}
+  if(ep===EPOCH&&a.spotKey!=='desk')await moveTo(a,'desk');
+ }finally{a.busy=false}})();
+},5200);
+
+/* ================= MARKDOWN ================= */
+function inline(s){
+ const codes=[];
+ s=s.replace(/`([^`]+)`/g,(m,c)=>{codes.push(c);return '\u0000'+(codes.length-1)+'\u0000'});
+ s=s.replace(/^\[ \]\s/,'☐ ').replace(/^\[x\]\s/i,'☑ ');
+ s=s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g,(m,t,u)=>/^https?:/.test(u)?`<a href="${u}" target="_blank" rel="noopener">🖼 ${t||'image'}</a>`:t);
+ s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,(m,t,u)=>/^(https?:|mailto:)/.test(u)?`<a href="${u}" target="_blank" rel="noopener">${t}</a>`:t);
+ s=s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+ s=s.replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>').replace(/__([^_]+?)__/g,'<strong>$1</strong>');
+ s=s.replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\*)/g,'$1<em>$2</em>').replace(/(^|[\s(])_([^_\s][^_]*?)_(?=[\s.,;:!?)]|$)/g,'$1<em>$2</em>');
+ s=s.replace(/~~([^~]+)~~/g,'<del>$1</del>');
+ s=s.replace(/\u0000(\d+)\u0000/g,(m,i)=>'<code>'+codes[i]+'</code>');
+ return s;
+}
+const reList=/^(\s*)([-*+•]|\d+[.)])\s+(.*)$/,reFence=/^\s*(```|~~~)/,reHead=/^(#{1,6})\s+(.*)$/,reHr=/^\s*([-*_])(\s*\1){2,}\s*$/;
+const isTable=(lines,i)=>/^\s*\|?.*\|.*$/.test(lines[i])&&i+1<lines.length&&/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lines[i+1]);
+function md(src){
+ const lines=String(src||'').replace(/\r/g,'').split('\n');let h='',i=0;
+ const cells=l=>{let t=l.trim();if(t.startsWith('|'))t=t.slice(1);if(t.endsWith('|'))t=t.slice(0,-1);return t.split('|').map(c=>c.trim())};
+ while(i<lines.length){
+  const l=lines[i];let m;
+  if(reFence.test(l)){const buf=[];i++;while(i<lines.length&&!reFence.test(lines[i])){buf.push(lines[i]);i++}i++;h+=`<pre><code>${escH(buf.join('\n'))}</code></pre>`;continue}
+  if(!l.trim()){i++;continue}
+  if(m=l.match(reHead)){const n=m[1].length;h+=`<h${n}>${inline(escH(m[2].replace(/\s*#+\s*$/,'')))}</h${n}>`;i++;continue}
+  if(reHr.test(l)){h+='<hr>';i++;continue}
+  if(isTable(lines,i)){const hd=cells(l);i+=2;h+='<table><thead><tr>'+hd.map(c=>`<th>${inline(escH(c))}</th>`).join('')+'</tr></thead><tbody>';while(i<lines.length&&lines[i].includes('|')&&lines[i].trim()){h+='<tr>'+cells(lines[i]).map(c=>`<td>${inline(escH(c))}</td>`).join('')+'</tr>';i++}h+='</tbody></table>';continue}
+  if(/^\s*>/.test(l)){const buf=[];while(i<lines.length&&/^\s*>/.test(lines[i])){buf.push(lines[i].replace(/^\s*>\s?/,''));i++}h+='<blockquote>'+md(buf.join('\n'))+'</blockquote>';continue}
+  if(reList.test(l)){
+   const st=[];
+   while(i<lines.length){
+    const mm=lines[i].match(reList);
+    if(!mm){if(/^\s{2,}\S/.test(lines[i])&&st.length){h+=' '+inline(escH(lines[i].trim()));i++;continue}break}
+    const ind=mm[1].replace(/\t/g,'  ').length,tag=/\d/.test(mm[2])?'ol':'ul';
+    if(!st.length||ind>st[st.length-1].ind+1){h+=`<${tag}><li>`;st.push({ind,tag})}
+    else{while(st.length>1&&ind<st[st.length-1].ind-1){const t=st.pop();h+=`</li></${t.tag}>`}h+='</li><li>'}
+    h+=inline(escH(mm[3]));i++;
+   }
+   while(st.length){const t=st.pop();h+=`</li></${t.tag}>`}continue;
+  }
+  const buf=[];
+  while(i<lines.length&&lines[i].trim()&&!reFence.test(lines[i])&&!reHead.test(lines[i])&&!reList.test(lines[i])&&!/^\s*>/.test(lines[i])&&!isTable(lines,i)&&!(buf.length&&reHr.test(lines[i]))){buf.push(lines[i].trim());i++}
+  if(!buf.length){buf.push(lines[i].trim());i++}
+  h+='<p>'+buf.map(b=>inline(escH(b))).join('<br>')+'</p>';
+ }
+ return h;
+}
+function splitSlides(src){
+ return String(src).split(/\n\s*---+\s*\n/).map(s=>s.trim()).filter(Boolean).map(s=>{
+  const notes=[];const body=s.split('\n').filter(l=>{const m=l.match(/^\s*>\s*(note|notes)\s*(d'orateur)?\s*:?\s*(.*)$/i);if(m){notes.push(m[3]);return false}return true}).join('\n');
+  return {body,notes:notes.join(' ')};
+ });
+}
+function slidesHTML(src,forPrint){
+ return splitSlides(src).map((s,i,arr)=>`<div class="slide${i===0?' cover':''}">${md(s.body)}<div class="num">${i+1} / ${arr.length}</div></div>`+(!forPrint&&s.notes?`<div class="notes">🎙 ${escH(s.notes)}</div>`:'')).join('');
+}
+
+/* ================= GEMINI ================= */
+function apiErr(st,msg){
+ if(st===400&&/api key|API_KEY/i.test(msg))return 'Clé API invalide. Vérifiez-la dans Réglages.';
+ if(st===403)return 'Accès refusé par Google (clé ou projet non autorisé).';
+ if(st===404)return `Modèle « ${settings.model} » introuvable. Choisissez-en un autre dans Réglages.`;
+ if(st===429)return 'Quota Gemini atteint. Patientez une minute ou changez de modèle.';
+ return `Erreur API (${st}) ${short(msg,160)}`;
+}
+async function gemini({system,contents,json=false,search=false,signal,onRetry}){
+ const body={contents,generationConfig:{}};
+ if(system)body.systemInstruction={parts:[{text:system}]};
+ if(json)body.generationConfig.responseMimeType='application/json';
+ if(search)body.tools=[{google_search:{}}];
+ let attempt=0;
+ for(;;){
+  let r;
+  try{r=await fetch(`${API}/models/${encodeURIComponent(settings.model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':settings.key},body:JSON.stringify(body),signal})}
+  catch(e){if(e.name==='AbortError')throw e;throw new Error("Connexion impossible à l'API Gemini. Vérifiez votre réseau.")}
+  if(r.ok){
+   const d=await r.json(),c=d.candidates&&d.candidates[0];
+   if(!c||!c.content){if(attempt<1){attempt++;continue}throw new Error('Réponse vide de Gemini'+(d.promptFeedback&&d.promptFeedback.blockReason?' ('+d.promptFeedback.blockReason+')':'')+'.')}
+   const text=(c.content.parts||[]).filter(p=>p.text&&!p.thought).map(p=>p.text).join('');
+   const gm=c.groundingMetadata||{};const sources=(gm.groundingChunks||[]).map(g=>g.web).filter(w=>w&&w.uri);
+   return {text,sources};
+  }
+  let msg='';try{const e=await r.json();msg=(e.error&&e.error.message)||''}catch(_){}
+  if(body.tools&&r.status===400&&/tool|search|ground/i.test(msg)){delete body.tools;continue}
+  if([429,500,502,503,504].includes(r.status)&&attempt<3){attempt++;onRetry&&onRetry(attempt);await waitM(2500*attempt*attempt,signal);continue}
+  throw new Error(apiErr(r.status,msg));
+ }
+}
+function waitM(ms,signal){return new Promise((res,rej)=>{const t=setTimeout(res,ms);if(signal){if(signal.aborted){clearTimeout(t);return rej(new DOMException('stop','AbortError'))}signal.addEventListener('abort',()=>{clearTimeout(t);rej(new DOMException('stop','AbortError'))},{once:true})}})}
+const W8=ms=>waitM(ms*tk(),mission&&mission.abort.signal);
+function sections(text){
+ const t=String(text||'').replace(/^```(?:markdown|md)?\s*\n([\s\S]*?)\n```\s*$/,'$1');
+ const parts=t.split(/^\s*#{2,4}\s*(PENS[EÉ]ES|R[EÉ]SULTAT|MESSAGE|LIVRABLE)\s*:?\s*$/im);
+ const o={};
+ if(parts.length<2){o.RESULTAT=t.trim();return o}
+ for(let i=1;i<parts.length;i+=2){const k=parts[i].toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');o[k]=(parts[i+1]||'').trim()}
+ return o;
+}
+const thoughtsOf=s=>String(s||'').split('\n').map(l=>l.replace(/^\s*([-*•]|\d+[.)])\s*/,'').replace(/\*\*/g,'').trim()).filter(Boolean).slice(0,5).map(l=>short(l,110));
+function parseJSON(t){try{return JSON.parse(t)}catch(e){const m=String(t).match(/\{[\s\S]*\}/);if(m){try{return JSON.parse(m[0])}catch(_){}}return null}}
+const teamDesc=()=>team.slice(1).map(t=>`- id "${t.id}" : ${t.name}, ${t.fonction}. Personnalité : ${t.perso}${t.skill==='search'?' [a accès à la recherche Google]':''}${t.skill==='review'?' [relecture finale automatique]':''}`).join('\n');
+const lastDeliv=()=>archives[0];
+function plannerSystem(){
+ const d=team[0],ld=lastDeliv();
+ return `Tu es ${d.name}, ${d.fonction} du « Grand Bureau », une agence d'agents IA. Personnalité : ${d.perso}
+Tu dialogues directement avec le client. Tu ne produis pas le travail toi-même : tu le confies à ton équipe, puis tu assembles le livrable final.
+
+TON ÉQUIPE :
+${teamDesc()}
+
+RÈGLES :
+- Conversation, salutation, remerciement, question rapide à laquelle tu peux répondre en quelques phrases, ou demande vraiment trop floue → "mode":"reponse". Tu peux poser UNE seule question de précision. Dès qu'une demande est exploitable, ne pose pas de question : lance la mission en faisant des choix raisonnables.
+- Travail à produire (document, rapport, analyse, présentation, plan, texte, tableau, budget, e-mail, code, recherche…) → "mode":"mission".
+- Une mission = 1 à 4 étapes successives. Chaque étape = 1 à 4 tâches menées en parallèle par des agents différents. Les agents d'une étape reçoivent les résultats des étapes précédentes. N'implique que les agents utiles. Consignes précises, concrètes et complètes.
+- Ne prévois pas de relecture finale : elle est automatique.
+- Si le client demande de modifier ou compléter le dernier livrable, mets "revision": true.
+- Ton message au client : 1 à 3 phrases, dans ton style.
+${ld?`\nDERNIER LIVRABLE REMIS AU CLIENT : « ${ld.title} » (${ld.type}).`:''}
+
+Réponds UNIQUEMENT avec ce JSON :
+{"mode":"reponse" ou "mission","message":"…","mission":{"titre":"titre court du livrable","type":"document|presentation|tableau|email|code|plan|autre","objectif":"…","revision":false,"briefing":"phrase lancée à l'équipe, max 12 mots","etapes":[{"nom":"nom court de l'étape","taches":[{"agent":"id","consigne":"…","annonce":"ordre oral très court, max 8 mots"}]}]}}`;
+}
+const TYPE_RULES={
+ presentation:"PRÉSENTATION : 6 à 12 diapositives séparées par une ligne contenant uniquement ---. Chaque diapositive commence par un titre « # ». La première est la couverture (titre + sous-titre). Contenu concis en puces. Notes d'orateur éventuelles en fin de diapositive sous la forme « > Note : … ».",
+ tableau:"TABLEAU : livrable centré sur un ou plusieurs tableaux Markdown propres et complets, avec une courte introduction, des totaux si pertinent, et des remarques utiles.",
+ email:"E-MAIL : un ou plusieurs e-mails prêts à envoyer, chacun avec une ligne « **Objet :** … » puis le corps complet avec formule d'appel et signature.",
+ code:"CODE : code complet et fonctionnel dans des blocs ```langage```, avec une brève explication et des instructions d'utilisation.",
+ plan:"PLAN : plan d'action structuré (# titre, ## sections), étapes numérotées, responsables, échéances et tableau récapitulatif si utile.",
+ document:"DOCUMENT : document structuré (# titre, ## sections), paragraphes vraiment rédigés, listes et tableaux là où ils aident.",
+ autre:"Livrable structuré en Markdown (# titre, ## sections), complet et directement utilisable."
+};
+function agentSystem(t){
+ const d=team[0];
+ return `Tu es ${t.name}, ${t.fonction} au « Grand Bureau », agence d'agents IA dirigée par ${d.name}. Personnalité : ${t.perso}
+Tu exécutes la tâche confiée par ton directeur, avec sérieux, dans ton domaine, en tenant compte du travail déjà fait par tes collègues.
+${t.skill==='search'&&settings.search?"Tu disposes de la recherche Google : utilise-la pour trouver des informations récentes et vérifiables. Termine par une liste de sources (titre + lien).":"N'invente pas de faits précis douteux : signale les chiffres à vérifier."}
+Langue : français (sauf demande contraire du client).
+
+FORMAT OBLIGATOIRE :
+### PENSEES
+- 3 à 5 pensées très courtes (8 à 14 mots), à la première personne, qui montrent ta réflexion pendant le travail, avec ta personnalité.
+### RESULTAT
+Ton travail complet en Markdown, prêt à être exploité par l'équipe.`;
+}
+function missionCtx(m,withPrev=true){
+ let s=`MISSION : ${m.titre}\nOBJECTIF : ${m.objectif||''}\nTYPE DE LIVRABLE FINAL : ${m.type}\n\nDEMANDE DU CLIENT :\n${m.request}\n`;
+ if(m.revision&&m.prevDeliv)s+=`\nLIVRABLE PRÉCÉDENT À MODIFIER (« ${m.prevDeliv.title} ») :\n${short(m.prevDeliv.md,14000)}\n`;
+ if(withPrev&&m.outputs.length)s+=`\nTRAVAUX DÉJÀ RÉALISÉS PAR L'ÉQUIPE :\n`+m.outputs.map(o=>`\n=== ${o.name} (${o.fonction}) — tâche : ${o.consigne}\n${short(o.text,9000)}`).join('\n')+'\n';
+ return s;
+}
+const filesParts=fs=>(fs||[]).map(f=>({inlineData:{mimeType:f.mime,data:f.data}}));
+
+/* ================= DÉMO ================= */
+function demoPlan(text){
+ const t=text.trim(),low=t.toLowerCase();
+ if(t.length<14||/^(salut|bonjour|bonsoir|hello|coucou|merci|ça va|ca va|yo|hey)\b/.test(low))
+  return {mode:'reponse',message:pick([`Bienvenue ! Ici ${team[0].name}. Donnez-moi une vraie mission — un rapport, une présentation, un budget, un e-mail… — et l'équipe se met au travail.`,`Je vous écoute. Décrivez le travail à produire et je mobilise l'équipe.`])};
+ const type=/pr[ée]sentation|diapo|slides?|pitch/.test(low)?'presentation':/tableau|budget|devis|planning|calendrier|comparatif/.test(low)?'tableau':/e-?mail|courriel|lettre|message|relance/.test(low)?'email':/\bcode\b|script|html|python|javascript|fonction|programme/.test(low)?'code':/plan d'action|strat[ée]gie|feuille de route/.test(low)?'plan':'document';
+ let title=t.replace(/^(fais|fait|cr[ée]e|r[ée]dige|pr[ée]pare|[ée]cris|donne|g[ée]n[èe]re|je veux|j'ai besoin d['e]|il me faut)[- ]?(moi)?\s*/i,'').replace(/^(un|une|des|le|la|les)\s+/i,'');
+ title=short(title.charAt(0).toUpperCase()+title.slice(1),70);
+ const by=r=>team.slice(1).find(x=>roleOf(x)===r)||team[1];
+ const s1=[{agent:by('search').id,consigne:'Rassembler les informations clés et les sources sur le sujet.',annonce:'Trouve-moi les faits essentiels.'}];
+ if(type==='tableau'||type==='document'||type==='plan')s1.push({agent:by('data').id,consigne:'Proposer les chiffres et un tableau de synthèse.',annonce:'Prépare les chiffres.'});
+ const s2=[{agent:by('creative').id,consigne:"Proposer l'angle, le titre et la structure.",annonce:'Donne-nous un angle fort.'}];
+ const s3=[{agent:(type==='code'?by('dev'):by('writer')).id,consigne:'Rédiger le contenu complet à partir des travaux.',annonce:'À toi la rédaction.'}];
+ return {mode:'mission',message:`Bien reçu. Je lance l'équipe sur « ${title} » — vous aurez le résultat dans quelques instants.`,
+  mission:{titre:title,type,objectif:'Démonstration',briefing:'Équipe, nouvelle mission ! On s\'y met.',etapes:[{nom:'Recherche & données',taches:s1},{nom:'Angle & structure',taches:s2},{nom:'Rédaction',taches:s3}]}};
+}
+const DEMO_TH={
+ search:["Je commence par les sources officielles.","Trois articles se contredisent, je recoupe.","Cette étude de 2025 est une pépite !","Je garde seulement le vérifiable."],
+ data:["Je pose les ordres de grandeur d'abord.","Un tableau dira plus que dix phrases.","Ce total ne tombe pas juste… corrigé.","Les chiffres sont cohérents maintenant."],
+ creative:["Il faut parler au public visé.","J'hésite entre deux titres… le second claque.","Trois parties, une chute forte.","Voilà un angle que personne n'attend."],
+ writer:["L'introduction doit accrocher tout de suite.","J'enlève le jargon, on gagne en clarté.","Ce paragraphe respire mieux ainsi.","Une conclusion qui donne envie d'agir."],
+ dev:["Je découpe le problème en fonctions.","Version simple d'abord, ça marche.","J'ajoute des commentaires clairs."],
+ review:["Deux accords à corriger ici.","La transition manque de fluidité.","Tout est propre, rien ne dépasse."],
+ gen:["Je m'y mets sérieusement.","Ça prend forme.","Encore un détail et c'est bon."]
+};
+async function demoAgent(t,task,m){
+ await W8(1800+Math.random()*1600);
+ const r=roleOf(t);
+ return {thoughts:DEMO_TH[r]||DEMO_TH.gen,text:`**${t.name}** — ${task.consigne}\n\n- Point clé 1 sur « ${m.titre} »\n- Point clé 2\n- Point clé 3`,sources:[]};
+}
+function demoFinal(m){
+ const T=m.titre,note=`> 🧪 **Livrable de démonstration.** Ajoutez une clé API Gemini dans Réglages pour que l'équipe produise un vrai travail sur votre sujet.`;
+ if(m.type==='presentation')return `# ${T}\n\nPrésentation préparée par l'équipe du Grand Bureau\n\n---\n\n# Le contexte\n\n- Pourquoi ce sujet compte aujourd'hui\n- Les enjeux pour votre public\n- Ce que l'on vise\n\n> Note : commencer par une anecdote locale.\n\n---\n\n# Les chiffres clés\n\n| Indicateur | Valeur | Tendance |\n|---|---|---|\n| Marché | 12 Mds FCFA | ↗ |\n| Clients visés | 40 000 | ↗ |\n| Délai | 6 mois | → |\n\n---\n\n# Notre proposition\n\n- Une idée simple et forte\n- Trois actions concrètes\n- Un calendrier réaliste\n\n---\n\n# Prochaines étapes\n\n1. Valider l'angle\n2. Lancer le pilote\n3. Mesurer et ajuster\n\n---\n\n# Merci\n\n${note}`;
+ if(m.type==='email')return `# ${T}\n\n**Objet :** ${T}\n\nBonjour,\n\nJe me permets de revenir vers vous au sujet de notre échange. Vous trouverez ci-dessous les points essentiels, présentés simplement.\n\n- Premier point important\n- Deuxième point, avec l'action attendue\n- Échéance proposée : vendredi prochain\n\nJe reste disponible pour en discuter.\n\nBien cordialement,\n\n${note}`;
+ if(m.type==='code')return `# ${T}\n\nVoici une première version fonctionnelle.\n\n\`\`\`javascript\n// Exemple de démonstration\nfunction bonjour(nom) {\n  return \`Bonjour \${nom}, bienvenue au Grand Bureau !\`;\n}\nconsole.log(bonjour('Atikan'));\n\`\`\`\n\n## Utilisation\n\n1. Copiez le code dans un fichier \`app.js\`.\n2. Exécutez \`node app.js\`.\n\n${note}`;
+ return `# ${T}\n\n${note}\n\n## Introduction\n\nCe ${m.type==='tableau'?'tableau':'document'} a été préparé par l'équipe du Grand Bureau : recherche, analyse des données, structuration et rédaction. Il présente l'essentiel de façon claire et directement exploitable.\n\n## Les points essentiels\n\n- **Contexte** : ce qu'il faut savoir avant d'agir.\n- **Enjeux** : ce qui est en jeu pour vous et votre public.\n- **Opportunités** : là où se trouve la valeur.\n\n## Synthèse chiffrée\n\n| Poste | Estimation | Commentaire |\n|---|---|---|\n| Préparation | 250 000 FCFA | Études et repérages |\n| Production | 1 200 000 FCFA | Poste principal |\n| Communication | 400 000 FCFA | Réseaux sociaux et radio |\n| **Total** | **1 850 000 FCFA** | Hors imprévus (10 %) |\n\n## Recommandations\n\n1. Valider les priorités avec les partenaires.\n2. Lancer une phase pilote sur un périmètre réduit.\n3. Mesurer les résultats et ajuster.\n\n## Conclusion\n\nAvec une démarche simple et progressive, l'objectif est atteignable dans des délais raisonnables.`;
+}
+
+/* ================= CHAT / JOURNAL / UI ================= */
+const vChat=$('#v-chat'),vJour=$('#v-journal'),vArch=$('#v-archives');
+const avatar=(t,cls='')=>`<span class="av ${cls}" style="--c:${t?t.color:'#666'}">${escH(t?t.name[0]:'?')}</span>`;
+const tById=id=>team.find(t=>t.id===id);
+function renderMsg(m){
+ const d=document.createElement('div');
+ if(m.k==='user'){d.className='msg me';d.innerHTML=`<div class="bx">${escH(m.text)}${m.files&&m.files.length?`<div class="att">📎 ${m.files.map(escH).join(', ')}</div>`:''}</div>`}
+ else if(m.k==='dir'){const t=team[0];d.className='msg dir';d.innerHTML=`${avatar(t)}<div class="bx"><div class="nm">${escH(t.name)} · ${escH(t.fonction)}</div>${escH(m.text)}</div>`}
+ else if(m.k==='note'){d.className='note'+(m.err?' err':'');d.innerHTML=escH(m.text)+(m.btn==='settings'?' <button data-act="settings">Réglages</button>':'')}
+ else if(m.k==='card'){const it=archives.find(x=>x.id===m.id);d.className='card';d.dataset.id=m.id;d.innerHTML=`<div class="ic">${escH(typeLabel(m.type).slice(0,4))}</div><div><b>${escH(m.title)}</b><small>${escH(typeLabel(m.type))} · ${it?'Ouvrir le livrable':'Livrable supprimé'}</small></div>`}
+ else if(m.k==='sugg'){d.className='sugg';d.innerHTML=m.items.map(s=>`<button>${escH(s)}</button>`).join('')}
+ return d;
+}
+function addChat(m,save=true){
+ if(save){chatLog.push(m);if(chatLog.length>120)chatLog=chatLog.slice(-120);store.set('chat',chatLog)}
+ vChat.appendChild(renderMsg(m));vChat.scrollTop=vChat.scrollHeight;
+}
+vChat.addEventListener('click',e=>{
+ const c=e.target.closest('.card');if(c){const it=archives.find(x=>x.id===c.dataset.id);if(it)openViewer(it);else toast('Ce livrable a été supprimé.');return}
+ const s=e.target.closest('.sugg button');if(s){input.value=s.textContent;autoGrow();input.focus();return}
+ if(e.target.dataset.act==='settings')openSettings();
+});
+let typingEl=null;
+function dirTyping(on){
+ if(on&&!typingEl){typingEl=document.createElement('div');typingEl.className='msg dir';typingEl.innerHTML=`${avatar(team[0])}<div class="bx"><span class="typing"><i></i><i></i><i></i></span></div>`;vChat.appendChild(typingEl);vChat.scrollTop=vChat.scrollHeight}
+ if(!on&&typingEl){typingEl.remove();typingEl=null}
+}
+let jUnread=0;
+function log(fromId,text,kind='talk',toId){
+ $('#jEmpty')&&$('#jEmpty').remove();
+ const f=tById(fromId),to=toId?tById(toId):null,d=document.createElement('div');
+ const tm=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+ if(kind==='sys'){d.className='jl sys';d.textContent='— '+text+' —'}
+ else{d.className='jl '+kind;d.innerHTML=`${avatar(f)}<div><span class="who" style="color:${f?f.color:'#ccc'}">${escH(f?f.name:'')}</span>${to?` <span class="to">→ ${escH(to.name)}</span>`:''}<span class="tm">${tm}</span><div class="tx">${escH(text)}</div></div>`}
+ const atBottom=vJour.scrollHeight-vJour.scrollTop-vJour.clientHeight<60;
+ vJour.appendChild(d);if(atBottom)vJour.scrollTop=vJour.scrollHeight;
+ if(!$('.tabs [data-v=journal]').classList.contains('on')){jUnread++;const b=$('#jBadge');b.hidden=false;b.textContent=jUnread>99?'99+':jUnread}
+}
+$$('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+ $$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+ $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+b.dataset.v));
+ if(b.dataset.v==='journal'){jUnread=0;$('#jBadge').hidden=true;vJour.scrollTop=vJour.scrollHeight}
+ if(b.dataset.v==='archives')renderArchives();
+}));
+const typeLabel=t=>({document:'Document',presentation:'Présentation',tableau:'Tableau',email:'E-mail',code:'Code',plan:"Plan d'action",autre:'Livrable'}[t]||'Livrable');
+function renderArchives(){
+ if(!archives.length){vArch.innerHTML='<div class="empty">Aucun livrable pour l\'instant.<br>Les travaux remis par le directeur seront rangés ici.</div>';return}
+ vArch.innerHTML=archives.map(it=>`<div class="arch" data-id="${it.id}"><div class="card" style="margin:0;padding:0;border:0;background:none"><div class="ic">${escH(typeLabel(it.type).slice(0,4))}</div></div><div style="min-width:0"><b>${escH(it.title)}</b><small>${escH(typeLabel(it.type))} · ${new Date(it.date).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div><button class="x" data-del="${it.id}" title="Supprimer">×</button></div>`).join('');
+}
+vArch.addEventListener('click',e=>{
+ const del=e.target.dataset.del;if(del){archives=archives.filter(x=>x.id!==del);store.set('archives',archives);renderArchives();return}
+ const r=e.target.closest('.arch');if(r){const it=archives.find(x=>x.id===r.dataset.id);it&&openViewer(it)}
+});
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2600)}
+
+/* ================= MISSION BAR ================= */
+function mbar(on){$('#mbar').classList.toggle('on',on)}
+function mUpdate(stageTxt,prog){if(stageTxt!=null)$('#mStage').textContent=stageTxt;if(prog!=null)$('#mProg').style.width=Math.round(prog*100)+'%'}
+function mChips(ids){$('#mChips').innerHTML=ids.map(id=>{const t=tById(id);return `<span class="chip" data-id="${id}">${avatar(t)}${escH(t.name)}</span>`}).join('')}
+function chip(id,st){const c=$(`#mChips [data-id="${id}"]`);if(c){c.classList.remove('work','done');st&&c.classList.add(st)}}
+$('#stopBtn').addEventListener('click',()=>{if(mission){mission.abort.abort();toast('Mission interrompue.')}});
+
+/* ================= ORCHESTRATION ================= */
+async function onSend(){
+ const text=input.value.trim();if(!text||planning)return;
+ if(mission){toast("Une mission est déjà en cours. Patientez ou arrêtez-la.");return}
+ const files=pendingFiles;pendingFiles=[];renderFiles();
+ input.value='';autoGrow();
+ addChat({k:'user',text,files:files.map(f=>f.name)});
+ EPOCH++;planning=true;sendBtn.disabled=true;
+ const d=dirA();
+ workers().forEach(a=>{if(a.spotKey!=='desk')moveTo(a,'desk')});
+ if(d.spotKey!=='desk')await moveTo(d,'desk');
+ setWork(d,true,'thinking');say(d,pick(['Hmm, voyons ça','Je réfléchis','Intéressant…']),'work',0);dirTyping(true);
+ let plan;
+ try{
+  if(settings.key){
+   const contents=[];
+   history.slice(-12).forEach(h=>{const role=h.role==='user'?'user':'model';if(contents.length&&contents[contents.length-1].role===role)contents[contents.length-1].parts[0].text+='\n\n'+h.text;else contents.push({role,parts:[{text:h.text}]})});
+   if(contents.length&&contents[0].role==='model')contents.shift();
+   const cur={role:'user',parts:[{text},...filesParts(files)]};
+   if(contents.length&&contents[contents.length-1].role==='user'){contents[contents.length-1].parts[0].text+='\n\n'+text;contents[contents.length-1].parts.push(...filesParts(files))}else contents.push(cur);
+   const r=await gemini({system:plannerSystem(),contents,json:true,onRetry:()=>say(d,"Le réseau traîne, je réessaie",'work',0)});
+   plan=parseJSON(r.text);
+   if(!plan||!plan.mode)plan={mode:'reponse',message:short(r.text,600)||"Pardon, pouvez-vous reformuler ?"};
+  }else{await sleep(1300);plan=demoPlan(text)}
+ }catch(e){
+  setWork(d,false);hush(d);dirTyping(false);planning=false;sendBtn.disabled=false;
+  addChat({k:'note',text:e.message,err:true,btn:'settings'});say(d,'Petit souci technique…','say',3000);return;
+ }
+ setWork(d,false);hush(d);dirTyping(false);planning=false;sendBtn.disabled=false;
+ history.push({role:'user',text});
+ const msg=plan.message||'Bien reçu.';
+ history.push({role:'model',text:msg});history=history.slice(-30);store.set('history',history);
+ addChat({k:'dir',text:msg});
+ const valid=plan.mode==='mission'&&plan.mission&&Array.isArray(plan.mission.etapes);
+ if(!valid){say(d,short(msg,120),'say',4500);return}
+ runMission(plan.mission,text,files);
+}
+
+async function runMission(pm,request,files){
+ const d=dirA(),ids=new Set(team.map(t=>t.id));
+ const stages=(pm.etapes||[]).map(s=>({nom:s.nom||'Étape',taches:(s.taches||[]).filter(t=>t&&ids.has(t.agent)&&t.agent!=='dir')})).filter(s=>s.taches.length).slice(0,5);
+ stages.forEach(s=>{const seen=new Set();s.taches=s.taches.filter(t=>!seen.has(t.agent)&&seen.add(t.agent))});
+ if(!stages.length){addChat({k:'note',text:"Le directeur n'a pas su répartir le travail. Reformulez la demande.",err:true});return}
+ const type=TYPE_RULES[pm.type]?pm.type:'document';
+ mission={id:uid(),titre:pm.titre||short(request,60),type,objectif:pm.objectif||'',revision:!!pm.revision,prevDeliv:pm.revision?lastDeliv():null,request,files,outputs:[],sources:[],abort:new AbortController()};
+ const m=mission,sig=m.abort.signal;EPOCH++;
+ const reviewer=team.slice(1).find(t=>t.skill==='review');
+ const doReview=settings.review&&reviewer&&!stages.some(s=>s.taches.some(t=>t.agent===reviewer.id));
+ const involved=[...new Set(stages.flatMap(s=>s.taches.map(t=>t.agent)))];
+ const totalSteps=stages.length+2+(doReview?1:0);let stepN=0;
+ $('#mTitle').textContent=m.titre;mChips(involved);mUpdate('Briefing de l\'équipe',0.03);mbar(true);
+ log('dir',`Nouvelle mission : « ${m.titre} » (${typeLabel(type)})`,'sys');
+ try{
+  // briefing
+  await Promise.all(involved.map((id,i)=>moveTo(A[id],'brief:'+i)));
+  if(sig.aborted)throw new DOMException('stop','AbortError');
+  say(d,pm.briefing||'Équipe, nouvelle mission !','order',2600);log('dir',pm.briefing||'Nouvelle mission pour l\'équipe.','order');
+  await W8(2400);
+  for(const s of stages)for(const t of s.taches){
+   const a=A[t.agent],nm=tById(t.agent).name;
+   say(d,`${nm}, ${short(t.annonce||t.consigne,70)}`,'order',2300);log('dir',t.consigne,'order',t.agent);
+   await W8(900);say(a,pick(['Compris, chef !','C\'est noté.','Je m\'en occupe !','Ok, on y va.','Bien reçu.']),'say',1400);await W8(700);
+  }
+  await Promise.all(involved.map(id=>moveTo(A[id],'desk')));
+  // étapes
+  for(let si=0;si<stages.length;si++){
+   const s=stages[si];stepN++;mUpdate(`Étape ${si+1}/${stages.length} — ${s.nom}`,stepN/totalSteps);log('dir',`Étape ${si+1} : ${s.nom}`,'sys');
+   const prevAgents=si>0?stages[si-1].taches.map(t=>t.agent):[];
+   const before=m.outputs.slice();
+   const results=await Promise.all(s.taches.map((t,ti)=>runTask(t,ti,prevAgents,before)));
+   results.forEach(r=>r&&m.outputs.push(r));
+   if(si<stages.length-1&&Math.random()<.6)say(d,pick(['Bon rythme, continuez !','On avance bien.','Parfait, étape suivante.']),'say',2200);
+  }
+  // assemblage
+  stepN++;mUpdate('Le directeur assemble le livrable',stepN/totalSteps);
+  setWork(d,true);say(d,'Je rassemble le travail de chacun','work',0);log('dir','Assemblage du livrable final.','talk');
+  let fin;
+  if(settings.key){
+   const sys=`Tu es ${team[0].name}, ${team[0].fonction} du « Grand Bureau ». Personnalité : ${team[0].perso}
+Ton équipe a terminé ses tâches. Assemble le LIVRABLE FINAL destiné au client : complet, soigné, cohérent, directement utilisable. Ce n'est pas un résumé des travaux : c'est le produit fini. Ne mentionne pas les agents sauf si c'est utile au client. Garde les sources pertinentes en fin de document.
+${TYPE_RULES[type]}
+Langue : français (sauf demande contraire du client).
+
+FORMAT OBLIGATOIRE :
+### PENSEES
+- 2 à 3 pensées très courtes, à la première personne.
+### MESSAGE
+Message au client (1 à 3 phrases) pour lui remettre le travail, dans ton style.
+### LIVRABLE
+Le livrable complet en Markdown.`;
+   const r=await gemini({system:sys,contents:[{role:'user',parts:[{text:missionCtx(m)},...filesParts(files)]}],signal:sig,onRetry:()=>say(d,'Le réseau traîne, je réessaie','work',0)});
+   const sx=sections(r.text);fin={thoughts:thoughtsOf(sx.PENSEES),message:sx.MESSAGE||'Voici le travail de l\'équipe.',md:sx.LIVRABLE||sx.RESULTAT||r.text};
+  }else{await W8(2600);fin={thoughts:['Chacun a bien bossé.','Je mets tout en cohérence.'],message:`Voici « ${m.titre} ». L'équipe a fait du bon travail — dites-moi si vous voulez des ajustements.`,md:demoFinal(m)}}
+  hush(d);
+  for(const th of fin.thoughts.slice(0,2)){say(d,th,'think',1900);log('dir',th,'thought');await W8(1700)}
+  setWork(d,false);
+  let finalMd=fin.md;
+  // relecture
+  if(doReview){
+   stepN++;mUpdate(`Relecture par ${reviewer.name}`,stepN/totalSteps);
+   const rv=A[reviewer.id];chip(reviewer.id,'work');if(!$(`#mChips [data-id="${reviewer.id}"]`)){$('#mChips').insertAdjacentHTML('beforeend',`<span class="chip work" data-id="${reviewer.id}">${avatar(reviewer)}${escH(reviewer.name)}</span>`)}
+   await moveTo(d,'visit:'+reviewer.id);say(d,`${reviewer.name}, une dernière relecture ?`,'order',2400);log('dir','Relis et peaufine le livrable avant remise.','order',reviewer.id);
+   await W8(1500);say(rv,'Donnez-moi ça, chef.','say',1800);await W8(1200);
+   moveTo(d,'desk');
+   setWork(rv,true);const tw=workLoop(rv,reviewer);
+   let rr;
+   try{
+    if(settings.key){
+     const sys=agentSystem(reviewer).replace(/### RESULTAT[\s\S]*$/,'### RESULTAT\nLa version finale COMPLÈTE du livrable, corrigée et améliorée (fautes, cohérence, clarté, mise en forme). Conserve la structure, le format et les éventuels séparateurs --- des diapositives. Ne commente pas tes corrections ici.');
+     const r=await gemini({system:sys,contents:[{role:'user',parts:[{text:`DEMANDE DU CLIENT :\n${request}\n\nLIVRABLE À RELIRE (« ${m.titre} ») :\n\n${finalMd}`}]}],signal:sig});
+     const sx=sections(r.text);rr={thoughts:thoughtsOf(sx.PENSEES),text:sx.RESULTAT||''};
+    }else{await W8(2800);rr={thoughts:DEMO_TH.review,text:''}}
+   }finally{tw()}
+   hush(rv);setWork(rv,false);
+   for(const th of rr.thoughts.slice(0,2)){say(rv,th,'think',1900);log(reviewer.id,th,'thought');await W8(1700)}
+   if(rr.text&&rr.text.length>finalMd.length*0.6)finalMd=rr.text;
+   await moveTo(rv,'visit:dir');say(rv,'Tout est propre, chef.','say',2000);log(reviewer.id,'Relecture terminée.','done','dir');chip(reviewer.id,'done');
+   await W8(1300);say(d,'Merci, impeccable.','say',1600);await W8(600);moveTo(rv,'desk');
+  }
+  // sources
+  const src=[];const seen=new Set();m.sources.forEach(s=>{if(!seen.has(s.uri)){seen.add(s.uri);src.push(s)}});
+  if(src.length&&!/\n#{1,3}\s*sources/i.test(finalMd)&&type!=='presentation')finalMd+=`\n\n## Sources\n\n`+src.slice(0,12).map(s=>`- [${(s.title||s.uri).replace(/[\[\]]/g,'')}](${s.uri})`).join('\n');
+  // impression
+  stepN++;mUpdate('Impression et remise',0.97);
+  await moveTo(d,'printer');say(d,'Impression du livrable…','work',0);printerEl.classList.add('printing');await W8(1600);printerEl.classList.remove('printing');hush(d);
+  await moveTo(d,'desk');
+  const titleFromMd=(finalMd.match(/^#\s+(.+)$/m)||[])[1];
+  const item={id:uid(),title:short(titleFromMd&&type!=='email'?titleFromMd.replace(/[*_`]/g,''):m.titre,90),type,md:finalMd,date:Date.now(),request};
+  archives.unshift(item);archives=archives.slice(0,40);store.set('archives',archives);
+  say(d,'C\'est prêt ! Voici votre livrable.','say',3500);log('dir',`Livrable remis : « ${item.title} »`,'done');
+  addChat({k:'dir',text:fin.message});addChat({k:'card',id:item.id,title:item.title,type});
+  history.push({role:'model',text:`[Livrable remis au client : « ${item.title} » (${typeLabel(type)})]`});store.set('history',history.slice(-30));
+  mUpdate('Mission accomplie ✔',1);confetti();
+  workers().forEach((a,i)=>setTimeout(()=>{if(involved.includes(a.id))say(a,pick(['Bravo l\'équipe !','Mission accomplie !','On est forts !','Yesss !']),'say',1800)},300+i*250));
+  setTimeout(()=>openViewer(item),900);
+ }catch(e){
+  const stop=e.name==='AbortError';
+  addChat({k:'note',text:stop?'Mission arrêtée.':`La mission a échoué : ${e.message}`,err:!stop,btn:stop?null:'settings'});
+  log('dir',stop?'Mission arrêtée.':'Échec : '+e.message,'sys');
+  say(d,stop?'Bon, on arrête là.':'Petit souci technique…','say',3000);
+ }finally{
+  team.forEach(t=>{const a=A[t.id];setWork(a,false);if(a.spotKey!=='desk')moveTo(a,'desk')});
+  $('#webscreen')&&$('#webscreen').classList.remove('on');printerEl.classList.remove('printing');
+  mission=null;EPOCH++;setTimeout(()=>{if(!mission)mbar(false)},5000);
+ }
+}
+function workLoop(a,t){
+ const lines=WORK[roleOf(t)]||WORK.gen;let i=Math.random()*lines.length|0;
+ say(a,lines[i%lines.length],'work',0);
+ const iv=setInterval(()=>{i++;say(a,lines[i%lines.length],'work',0)},3400*tk());
+ return ()=>clearInterval(iv);
+}
+async function runTask(task,ti,prevAgents,prevOutputs){
+ const m=mission,sig=m.abort.signal,t=tById(task.agent),a=A[task.agent],d=dirA();
+ await W8(ti*700);
+ // aller chercher les notes d'un collègue
+ const prov=prevAgents.filter(x=>x!==task.agent);
+ if(prov.length&&Math.random()<.75){
+  const p=pick(prov),pt=tById(p);
+  await moveTo(a,'visit:'+p);say(a,pick([`${pt.name}, tu me passes tes notes ?`,`Montre-moi ce que tu as trouvé.`,`On regarde ton travail ensemble ?`]),'say',2200);
+  log(task.agent,'Récupère le travail de '+pt.name+'.','talk',p);
+  await W8(1500);if(A[p].spotKey==='desk')say(A[p],pick(['Tiens, tout est là.','Voilà, regarde.','Bonne lecture !']),'say',1800);await W8(1300);
+ }
+ const useWeb=t.skill==='search'&&settings.search;
+ await moveTo(a,useWeb?'library:'+ti:'desk');
+ chip(task.agent,'work');setWork(a,true);
+ if(useWeb){$('#webscreen')&&$('#webscreen').classList.add('on');a.el.classList.add('typing')}
+ const stop=workLoop(a,t);
+ let res;
+ try{
+  if(settings.key){
+   const user=missionCtx(m,false)+(prevOutputs.length?`\nTRAVAUX DÉJÀ RÉALISÉS PAR L'ÉQUIPE :\n`+prevOutputs.map(o=>`\n=== ${o.name} (${o.fonction})\n${short(o.text,9000)}`).join('\n')+'\n':'')+`\nTA TÂCHE (confiée par ${team[0].name}) :\n${task.consigne}`;
+   const r=await gemini({system:agentSystem(t),contents:[{role:'user',parts:[{text:user},...filesParts(m.files)]}],search:useWeb,signal:sig,onRetry:n=>say(a,`File d'attente… essai ${n+1}`,'work',0)});
+   const sx=sections(r.text);res={thoughts:thoughtsOf(sx.PENSEES),text:sx.RESULTAT||r.text,sources:r.sources};
+  }else res=await demoAgent(t,task,m);
+ }finally{stop()}
+ if(res.sources&&res.sources.length)m.sources.push(...res.sources);
+ hush(a);a.el.classList.remove('typing');a.el.classList.add('thinking');
+ for(const th of (res.thoughts.length?res.thoughts:['Voilà qui est fait.']).slice(0,3)){say(a,th,'think',1900);log(task.agent,th,'thought');await W8(1700)}
+ setWork(a,false);
+ if(useWeb&&!workers().some(x=>x.spotKey.startsWith('library')&&x!==a&&x.tag.classList.contains('work')))$('#webscreen')&&$('#webscreen').classList.remove('on');
+ // remise au directeur
+ const bi=team.findIndex(x=>x.id===task.agent)-1;
+ await moveTo(a,'brief:'+bi);
+ say(a,pick(['Chef, ma partie est prête !','C\'est bouclé, chef.','Voilà mon travail.','Terminé ! Tout est dedans.']),'say',2200);
+ log(task.agent,`Tâche terminée${res.sources&&res.sources.length?` (${res.sources.length} sources)`:''}.`,'done','dir');
+ await W8(1400);say(d,pick([`Merci ${t.name}.`,'Parfait, beau travail.','Très bien, je prends.',`Excellent, ${t.name} !`]),'say',1800);await W8(700);
+ chip(task.agent,'done');moveTo(a,'desk');
+ return {agent:task.agent,name:t.name,fonction:t.fonction,consigne:task.consigne,text:res.text};
+}
+function confetti(){const cols=['#e3a43b','#2a9d8f','#c3479b','#5b6ee1','#e76f51','#3fa34d'];for(let i=0;i<40;i++){const c=document.createElement('i');c.className='confetti';c.style.left=Math.random()*100+'%';c.style.background=pick(cols);c.style.animationDuration=(1.8+Math.random()*1.8)+'s';c.style.animationDelay=Math.random()*.5+'s';wrap.appendChild(c);setTimeout(()=>c.remove(),4500)}}
+
+/* ================= COMPOSER ================= */
+const input=$('#input'),sendBtn=$('#send');
+function autoGrow(){input.style.height='auto';input.style.height=Math.min(140,input.scrollHeight)+'px'}
+input.addEventListener('input',autoGrow);
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!('ontouchstart' in window)){e.preventDefault();onSend()}});
+sendBtn.addEventListener('click',onSend);
+$('#attach').addEventListener('click',()=>$('#fileIn').click());
+$('#fileIn').addEventListener('change',async e=>{
+ for(const f of e.target.files){
+  if(f.size>8*1024*1024){toast(`${f.name} : trop lourd (8 Mo max).`);continue}
+  let mime=f.type||'text/plain';
+  if(!/^(image\/|application\/pdf|text\/|application\/json)/.test(mime)){toast(`${f.name} : format non pris en charge (image, PDF ou texte).`);continue}
+  if(mime==='application/json')mime='text/plain';
+  const data=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(String(fr.result).split(',')[1]);fr.readAsDataURL(f)});
+  pendingFiles.push({name:f.name,mime,data});
+ }
+ e.target.value='';renderFiles();
+ if(!settings.key&&pendingFiles.length)toast('Les fichiers sont lus par les agents avec une clé Gemini.');
+});
+function renderFiles(){$('#files').innerHTML=pendingFiles.map((f,i)=>`<span>📎 ${escH(short(f.name,28))}<button data-i="${i}">×</button></span>`).join('')}
+$('#files').addEventListener('click',e=>{if(e.target.dataset.i!=null){pendingFiles.splice(+e.target.dataset.i,1);renderFiles()}});
+
+/* ================= VISIONNEUSE & EXPORTS ================= */
+let curItem=null;
+function docHead(it){return `<div class="dochead"><span>Le Grand Bureau · ${escH(typeLabel(it.type))}</span><span>${new Date(it.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}</span></div>`}
+function openViewer(it){
+ curItem=it;$('#vType').textContent=typeLabel(it.type);$('#vTitle').textContent=it.title;
+ const b=$('#vBody');
+ b.innerHTML=it.type==='presentation'?slidesHTML(it.md,false):`<div class="paper doc">${docHead(it)}${md(it.md)}</div>`;
+ b.scrollTop=0;
+ const hasTable=/\n\s*\|?\s*:?-{2,}/.test(it.md);
+ $('#vFoot').innerHTML=[it.type==='presentation'?'<button class="btn pri" data-x="show">▶ Présenter</button>':'',
+  '<button class="btn pri" data-x="pdf">PDF</button>','<button class="btn" data-x="word">Word</button>','<button class="btn" data-x="html">HTML</button>','<button class="btn" data-x="md">Markdown</button>',
+  hasTable?'<button class="btn" data-x="csv">CSV</button>':'','<button class="btn" data-x="copy">Copier</button>','<button class="btn" data-x="edit">✎ Modifier</button>'].join('');
+ $('#viewer').classList.add('on');
+}
+$('#vFoot').addEventListener('click',e=>{
+ const x=e.target.dataset.x,it=curItem;if(!x||!it)return;
+ const base=it.title.replace(/[\\/:*?"<>|]+/g,'').slice(0,60)||'livrable';
+ if(x==='pdf')printItem(it);
+ if(x==='word')download(base+'.doc',`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${escH(it.title)}</title><style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1f1a14}h1{font-size:22pt;color:#1b140d}h2{font-size:15pt;color:#7a4a12}h3{font-size:12.5pt}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bfae90;padding:5px 7px}th{background:#f6ead3}blockquote{border-left:3pt solid #e3a43b;padding-left:8pt;color:#4a3b28}pre{background:#f3ead8;padding:8pt;font-family:Consolas,monospace;font-size:9.5pt}</style></head><body>${it.type==='presentation'?splitSlides(it.md).map(s=>md(s.body)).join('<br style="page-break-before:always">'):md(it.md)}</body></html>`,'application/msword');
+ if(x==='html')download(base+'.html',standaloneHTML(it),'text/html');
+ if(x==='md')download(base+'.md',it.md,'text/markdown');
+ if(x==='csv')download(base+'.csv','﻿'+tablesCSV(it.md),'text/csv');
+ if(x==='copy'){navigator.clipboard.writeText(it.md).then(()=>toast('Texte copié.'),()=>toast('Copie impossible ici.'))}
+ if(x==='show')startShow(it);
+ if(x==='edit'){$('#viewer').classList.remove('on');input.value=`Modifie le livrable « ${it.title} » : `;autoGrow();input.focus();$('.tabs [data-v=chat]').click()}
+});
+function download(name,content,mime){
+ try{const url=URL.createObjectURL(new Blob([content],{type:mime+';charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Téléchargement : '+name)}
+ catch(e){toast('Téléchargement impossible ici.')}
+}
+function standaloneHTML(it){
+ const body=it.type==='presentation'?slidesHTML(it.md,true):`<div class="paper doc">${docHead(it)}${md(it.md)}</div>`;
+ return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escH(it.title)}</title><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter:wght@400;600&display=swap" rel="stylesheet"><style>body{margin:0;background:#3a3128;padding:24px}.paper{background:#fffdf8;max-width:780px;margin:0 auto;padding:44px 48px;border-radius:4px}@media print{body{background:#fff;padding:0}.paper{padding:0}.slide{page-break-after:always;box-shadow:none}}${$('#docCss').textContent}</style></head><body>${body}</body></html>`;
+}
+function tablesCSV(src){
+ const lines=src.split('\n'),out=[];
+ for(let i=0;i<lines.length;i++){
+  if(isTable(lines,i)){
+   const cells=l=>{let t=l.trim();if(t.startsWith('|'))t=t.slice(1);if(t.endsWith('|'))t=t.slice(0,-1);return t.split('|').map(c=>'"'+c.trim().replace(/\*\*|`/g,'').replace(/"/g,'""')+'"').join(';')};
+   if(out.length)out.push('');out.push(cells(lines[i]));i+=2;
+   while(i<lines.length&&lines[i].includes('|')&&lines[i].trim()){out.push(cells(lines[i]));i++}
+  }
+ }
+ return out.join('\r\n');
+}
+function printItem(it){
+ const pa=$('#printArea');
+ pa.innerHTML=`<style>${$('#docCss').textContent}</style>`+(it.type==='presentation'?slidesHTML(it.md,true):`<div class="paper doc">${docHead(it)}${md(it.md)}</div>`);
+ $('#pageStyle').textContent=it.type==='presentation'?'@page{size:297mm 210mm;margin:0}':'@page{size:A4;margin:16mm 15mm}';
+ setTimeout(()=>{try{window.print()}catch(e){toast('Impression indisponible ici : utilisez HTML ou Word.')}},60);
+}
+// diaporama
+let showIdx=0,showSlides=[];
+function startShow(it){showSlides=splitSlides(it.md);showIdx=0;$('#show').classList.add('on');renderShow();try{$('#show').requestFullscreen&&$('#show').requestFullscreen().catch(()=>{})}catch(e){}}
+function renderShow(){const s=showSlides[showIdx];$('#showSlide').innerHTML=`<div class="slide${showIdx===0?' cover':''}">${md(s.body)}<div class="num">${showIdx+1} / ${showSlides.length}</div></div>`;$('#showCtr').textContent='Touchez à droite / à gauche pour naviguer'}
+function closeShow(){$('#show').classList.remove('on');try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}}
+$('#show').addEventListener('click',e=>{if(e.target.closest('#showClose'))return closeShow();const r=$('#show').getBoundingClientRect();showIdx=clamp(showIdx+(e.clientX>r.width/2?1:-1),0,showSlides.length-1);renderShow()});
+document.addEventListener('keydown',e=>{if($('#show').classList.contains('on')){if(['ArrowRight',' ','PageDown'].includes(e.key)){showIdx=Math.min(showIdx+1,showSlides.length-1);renderShow()}if(['ArrowLeft','PageUp'].includes(e.key)){showIdx=Math.max(showIdx-1,0);renderShow()}if(e.key==='Escape')closeShow()}else if(e.key==='Escape')$$('.modal.on').forEach(m=>m.classList.remove('on'))});
+
+/* ================= MODALES ================= */
+$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('on')}));
+const KNOWN_MODELS=['gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-pro','gemini-flash-latest','gemini-2.5-flash','gemini-2.5-pro'];
+function fillModels(){
+ const list=[...new Set([...(settings.models||[]),...KNOWN_MODELS,settings.model])];
+ $('#sModel').innerHTML=list.map(m=>`<option ${m===settings.model?'selected':''}>${escH(m)}</option>`).join('');
+}
+function openSettings(){
+ $('#sKey').value=settings.key;fillModels();$('#sCustom').value='';
+ $('#sSearch').checked=settings.search;$('#sReview').checked=settings.review;$('#sSpeed').value=String(settings.speed);
+ $('#sTestMsg').textContent='« Lister » vérifie la clé et charge les modèles disponibles sur votre compte.';
+ $('#setModal').classList.add('on');
+}
+$('#setBtn').addEventListener('click',openSettings);$('#modePill').addEventListener('click',openSettings);
+$('#sEye').addEventListener('click',()=>{const k=$('#sKey');k.type=k.type==='password'?'text':'password'});
+$('#sList').addEventListener('click',async()=>{
+ const key=$('#sKey').value.trim(),msg=$('#sTestMsg');if(!key){msg.textContent='Entrez d\'abord une clé.';return}
+ msg.textContent='Vérification…';
+ try{
+  const r=await fetch(`${API}/models?pageSize=200`,{headers:{'x-goog-api-key':key}});
+  if(!r.ok){let t='';try{t=(await r.json()).error.message}catch(_){}msg.textContent='✖ '+(r.status===400||r.status===403?'Clé refusée par Google.':'Erreur '+r.status+' '+short(t,100));return}
+  const d=await r.json();
+  const ms=(d.models||[]).filter(x=>(x.supportedGenerationMethods||[]).includes('generateContent')&&/gemini/i.test(x.name)&&!/tts|image|embedding|live|audio|robotics|vision/i.test(x.name)).map(x=>x.name.replace('models/','')).sort().reverse();
+  settings.models=ms;fillModels();
+  if(ms.length&&!ms.includes($('#sModel').value)){const pref=ms.find(x=>/flash/.test(x)&&!/lite|preview|exp/.test(x))||ms[0];$('#sModel').value=pref}
+  msg.textContent=`✔ Clé valide — ${ms.length} modèles disponibles.`;
+ }catch(e){msg.textContent='✖ Connexion impossible à Google.'}
+});
+$('#sSave').addEventListener('click',()=>{
+ settings.key=$('#sKey').value.trim();settings.model=$('#sCustom').value.trim()||$('#sModel').value;
+ settings.search=$('#sSearch').checked;settings.review=$('#sReview').checked;settings.speed=+$('#sSpeed').value;
+ store.set('settings',settings);updatePill();$('#setModal').classList.remove('on');toast(settings.key?'Bureau connecté à Gemini.':'Mode démo.');
+});
+$('#sClearChat').addEventListener('click',()=>{chatLog=[];history=[];store.set('chat',[]);store.set('history',[]);vChat.innerHTML='';welcome();toast('Conversation effacée.')});
+$('#sClearArch').addEventListener('click',()=>{archives=[];store.set('archives',[]);renderArchives();toast('Livrables supprimés.')});
+function updatePill(){const p=$('#modePill');p.textContent=settings.key?settings.model:'DÉMO';p.classList.toggle('live',!!settings.key)}
+// équipe
+function openTeam(){
+ $('#teamBody').innerHTML=`<p style="margin:0 0 14px;color:var(--mute);font-size:12.5px">Personnalisez chaque agent : nom, fonction et personnalité guident vraiment leur façon de travailler.</p>`+team.map((t,i)=>`<div class="tm-card" data-i="${i}">
+  <div class="hd">${avatar(t)}<b style="flex:1">${i===0?'Directeur':'Agent '+i}</b><input type="color" data-f="color" value="${t.color}"></div>
+  <div class="g2"><input class="inp" data-f="name" value="${escH(t.name)}" placeholder="Nom"><input class="inp" data-f="fonction" value="${escH(t.fonction)}" placeholder="Fonction"></div>
+  <textarea class="inp" data-f="perso" placeholder="Personnalité">${escH(t.perso)}</textarea>
+  <div class="g2" style="margin-top:8px;margin-bottom:0">
+   ${i===0?'<div></div>':`<select class="inp" data-f="skill"><option value="" ${!t.skill?'selected':''}>Compétence : standard</option><option value="search" ${t.skill==='search'?'selected':''}>Recherche web</option><option value="review" ${t.skill==='review'?'selected':''}>Relecture finale</option></select>`}
+   <select class="inp" data-f="acc">${LOOKS.acc.map(x=>`<option value="${x}" ${t.acc===x?'selected':''}>${({'':'Accessoire : aucun',glasses:'Lunettes',cap:'Casquette',headphones:'Casque audio',headwrap:'Foulard',tie:'Cravate'})[x]}</option>`).join('')}</select>
+  </div></div>`).join('');
+ $('#teamModal').classList.add('on');
+}
+$('#teamBtn').addEventListener('click',()=>{if(mission)return toast('Attendez la fin de la mission.');openTeam()});
+$('#tSave').addEventListener('click',()=>{
+ $$('#teamBody .tm-card').forEach(c=>{const t=team[+c.dataset.i];$$('[data-f]',c).forEach(f=>{const v=f.value.trim();if(f.dataset.f==='name'&&!v)return;t[f.dataset.f]=v})});
+ store.set('team',team);buildWorld();$('#teamModal').classList.remove('on');toast('Équipe mise à jour.');
+});
+$('#tReset').addEventListener('click',()=>{team=clone(DEFAULT_TEAM);store.set('team',team);buildWorld();openTeam();toast("Équipe d'origine rétablie.")});
+
+/* ================= PWA ================= */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('#installBtn').style.display='inline-flex'});
+$('#installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('#installBtn').style.display='none'});
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol)){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
+
+/* ================= DÉMARRAGE ================= */
+function welcome(){
+ addChat({k:'dir',text:`Bienvenue au Grand Bureau. Je suis ${team[0].name}, le directeur. Confiez-moi une mission — rapport, présentation, étude, budget, e-mail, code… Mon équipe s'en charge et je vous remets le résultat.`});
+ if(!settings.key)addChat({k:'note',text:'Mode démo : les agents jouent la scène avec un livrable d\'exemple. Ajoutez votre clé API Gemini pour un vrai travail.',btn:'settings'});
+ addChat({k:'sugg',items:["Rapport sur le marché du cacao en Côte d'Ivoire","Présentation de 8 diapos pour lancer une appli de livraison à Abidjan","Budget prévisionnel d'un festival culturel de village","E-mail de relance client, poli mais ferme"]});
+}
+updatePill();fit();
+if(chatLog.length)chatLog.forEach(m=>addChat(m,false));else welcome();
+setTimeout(()=>{const d=dirA();d&&say(d,'Bienvenue ! Une mission pour nous ?','say',3500)},900);
+})();
+</script>
+</body>
+</html>
